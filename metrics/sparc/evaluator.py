@@ -13,6 +13,11 @@ class EvaluateTool(object):
         if self.args.seq2seq.target_with_db_id:
             # Remove database id from all predictions
             preds = [pred.split("|", 1)[-1].strip() for pred in preds]
+
+        for i in range(len(golds)):
+            if golds[i]['query'].lower() == "SELECT T1.id, T1.name FROM battle EXCEPT SELECT T1.id, T1.name FROM battle AS T1 JOIN ship AS T2 ON T1.id  =  T2.lost_in_battle WHERE T2.location  =  'English Channel'".lower():
+                golds[i]['query'] = "SELECT id, name FROM battle EXCEPT SELECT T1.id, T1.name FROM battle AS T1 JOIN ship AS T2 ON T1.id  =  T2.lost_in_battle WHERE T2.location  =  'English Channel'"
+
         exact_match = compute_exact_match_metric(preds, golds)
         test_suite = compute_test_suite_metric(preds, golds, db_dir=self.args.test_suite_db_dir)
         if section in ["train", "dev"]:

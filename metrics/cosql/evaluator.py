@@ -12,6 +12,17 @@ class EvaluateTool(object):
         # if self.args.seq2seq.target_with_db_id:
         #     # Remove database id from all predictions
         #     preds = [pred.split("|", 1)[-1].strip() for pred in preds]
+
+        # fix bugs in the gold dataset.
+        for i, each in enumerate(golds):
+            if "> =" in each['query']:
+                golds[i]['query'] = each['query'].replace("> =", ">=")
+            if "< =" in each['query']:
+                golds[i]['query'] = each['query'].replace("< =", "<=") 
+            if each['query'] == "SELECT countryname FROM countries WHERE countryid = 1 or countryid = 2 or countryid = 3 ) ":
+                golds[i]['query'] = "SELECT countryname FROM countries WHERE countryid = 1 or countryid = 2 or countryid = 3"
+
+
         exact_match = compute_exact_match_metric(preds, golds)
         test_suite = compute_test_suite_metric(preds, golds, db_dir=self.args.test_suite_db_dir)
         if section in ["train", "dev"]:

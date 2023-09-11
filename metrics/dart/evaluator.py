@@ -62,6 +62,11 @@ class EvaluateTool(object):
                     summary[f"{metric_name}_{k}"] = round(1.0 * sum(v) / len(v), 2)
 
             else:
+                # Each prediction should be a string with tokens separated by spaces
+                # Each reference should be a string with tokens separated by spaces
+                # from https://huggingface.co/spaces/evaluate-metric/meteor
+                processed_preds = [pred.split() for pred in processed_preds]
+                processed_golds = [[[gold.split()] if gold is not None else None for gold in ref] for ref in processed_golds]
                 res = metric.compute(predictions=processed_preds, references=processed_golds)
                 if metric_name == "sacrebleu":
                     summary[metric_name] = res["score"] * 0.01

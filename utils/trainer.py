@@ -351,4 +351,59 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
         return EvalPrediction(predictions=predictions, items=[examples[idx] for idx in range(len(predictions))])
 
     def _compute_metrics(self, eval_prediction: EvalPrediction, section) -> dict:
-        return self.evaluator.evaluate(eval_prediction.predictions, eval_prediction.items, section)
+        try:
+            return self.evaluator.evaluate(eval_prediction.predictions, eval_prediction.items, section)
+        except:
+            import pdb; pdb.post_mortem()
+
+class LlamaSeq2SeqTrainer(EvaluateFriendlySeq2SeqTrainer):
+    def prediction_step(
+            self,
+            model: nn.Module,
+            inputs: Dict[str, Union[torch.Tensor, Any]],
+            prediction_loss_only: bool,
+            ignore_keys: Optional[List[str]] = None,
+    ) -> Tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]:
+        """
+        Perform an evaluation step on :obj:`model` using obj:`inputs`.
+
+        Subclass and override to inject custom behavior.
+
+        Args:
+            model (:obj:`nn.Module`):
+                The model to evaluate.
+            inputs (:obj:`Dict[str, Union[torch.Tensor, Any]]`):
+                The inputs and targets of the model.
+
+                The dictionary will be unpacked before being fed to the model. Most models expect the targets under the
+                argument :obj:`labels`. Check your model's documentation for all accepted arguments.
+            prediction_loss_only (:obj:`bool`):
+                Whether or not to return the loss only.
+
+        Return:
+            Tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]: A tuple with the loss, logits and
+            labels (each being optional).
+        """
+        inputs = self._prepare_inputs(inputs)
+
+        # XXX: adapt synced_gpus for fairscale as well
+        gen_kwargs = {
+            "max_new_tokens": self.args.generation_max_length,
+        }
+        generated_tokens = self.model.generate(
+            inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            **gen_kwargs,
+        )
+
+        # in case the batch is shorter than max length, the output should be padded
+        if generated_tokens.shape[-1] < gen_kwargs["max_new_tokens"]:
+            generated_tokens = self._pad_tensors_to_max_len(generated_tokens, gen_kwargs["max_new_tokens"])
+
+        loss = torch.tensor([0]).cuda() # we will never train Llama through this API.
+
+        labels = inputs["labels"]
+        if labels.shape[-1] < gen_kwargs["max_new_tokens"]:
+            labels = self._pad_tensors_to_max_len(labels, gen_kwargs["max_new_tokens"])
+        return (loss, generated_tokens, labels)
+

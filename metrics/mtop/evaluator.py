@@ -48,6 +48,26 @@ class EvaluateTool(object):
                                                                                                       "Y .").replace(
             "drs.", "drs .").replace("St.", "St .").replace("Portugal.", "Portugal .") for pred in preds]
 
+        new_preds = []
+        for pred in preds:
+            # count the number of opening and closing brackets
+            # if the number of closing brackets is more than opening brackets
+            # add an opening bracket at the beginning of the string
+            opening = pred.count("[")
+            closing = pred.count("]")
+            if closing > opening:
+                pred = "[" + pred
+            else:
+                pred = "[" + pred + " ]"
+            
+            # if the prediction does not start with an opening bracket
+            # add an opening bracket at the beginning and end of the string
+            if pred[0] != "[":
+                pred = "[" + pred
+                pred = pred + " ]"
+            new_preds.append(pred)
+
+        preds = new_preds
         golds = [gold["seq_out"] for gold in golds]
         eval_results = top_metrics(golds, preds)
         summary["exact_match"] = eval_results["full_accuracy"]

@@ -2,6 +2,7 @@
 import logging
 from typing import Optional, Dict, Any
 from third_party.test_suite import evaluation as test_suite_evaluation
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def compute_test_suite_metric(predictions, references, db_dir: Optional[str] = N
     )
     # Only used for Sparc/CoSQL
     turn_scores = {"exec": [], "exact": []}
-    for prediction, reference in zip(predictions, references):
+    for prediction, reference in tqdm(zip(predictions, references)):
         turn_idx = reference.get("turn_idx", 0)
         # skip final utterance-query pairs
         if turn_idx < 0:

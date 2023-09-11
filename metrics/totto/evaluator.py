@@ -73,12 +73,13 @@ class EvaluateTool(object):
                     r2 = multi_references[2][i]
                     if r2:
                         # Take average over 3 references.
-                        score_i = (multi_bleurt_scores[0][i] + multi_bleurt_scores[1][i] +
-                                   multi_bleurt_scores[2][i]) / 3
+                        # NOTE change: multi_bleurt_scores is [{'score': [ .. ]}, ...]
+                        score_i = (multi_bleurt_scores[0]['scores'][i] + multi_bleurt_scores[1]['scores'][i] +
+                                   multi_bleurt_scores[2]['scores'][i]) / 3
                     else:
                         # print("only two refs")
                         # Take average over two references.
-                        score_i = (multi_bleurt_scores[0][i] + multi_bleurt_scores[1][i]) / 2
+                        score_i = (multi_bleurt_scores[0]['scores'][i] + multi_bleurt_scores[1]['scores'][i]) / 2
                     avg_bleurt_scores.append(score_i)
                 summary["bleurt"] = np.mean(avg_bleurt_scores)
             else:
