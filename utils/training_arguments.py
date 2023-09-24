@@ -43,3 +43,7 @@ class WrappedSeq2SeqTrainingArguments(Seq2SeqTrainingArguments):
         default=None, metadata={
             "help": "The directory to load the model weights from."}
     )
+    port: int = field(
+        default=8000, metadata={
+            "help": "The port to use for the llama server."}
+    )
