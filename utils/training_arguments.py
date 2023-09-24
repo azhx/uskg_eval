@@ -43,3 +43,11 @@ class WrappedSeq2SeqTrainingArguments(Seq2SeqTrainingArguments):
         default=None, metadata={
             "help": "The directory to load the model weights from."}
     )
+    add_newline: bool = field(
+        default=False, metadata={
+            "help": "Whether to add newline between table rows."}
+    )
+    cache_dir: Optional[str] = field(
+        default="cache", metadata={
+            "help": "The directory of the dataset caches."}
+    )

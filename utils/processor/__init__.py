@@ -7,8 +7,8 @@ from .table_processor import TableProcessor
 from .table_truncate import CellLimitTruncate, RowDeleteTruncate
 
 
-def get_default_processor(tokenizer, max_cell_length, max_input_length):
-    table_linearize_func = IndexedRowTableLinearize()
+def get_default_processor(args, tokenizer, max_cell_length, max_input_length):
+    table_linearize_func = IndexedRowTableLinearize(args)
     table_truncate_funcs = [
         CellLimitTruncate(max_cell_length=max_cell_length,
                           tokenizer=tokenizer,

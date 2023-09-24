@@ -38,6 +38,11 @@ class IndexedRowTableLinearize(TableLinearize):
     FORMAT: col: col1 | col2 | col 3 row 1 : val1 | val2 | val3 row 2 : ...
     """
 
+    def __init__(self, args) -> None:
+        super().__init__()
+        self.add_newline = args.add_newline
+
+
     def process_table(self, table_content: Dict):
         """
         Given a table, TableLinearize aims at converting it into a flatten sequence with special symbols.
@@ -45,10 +50,14 @@ class IndexedRowTableLinearize(TableLinearize):
         assert "header" in table_content and "rows" in table_content, self.PROMPT_MESSAGE
         # process header
         _table_str = self.process_header(table_content["header"]) + " "
+        if self.add_newline:
+            _table_str += "\n"
         # process rows
         for i, row_example in enumerate(table_content["rows"]):
             # NOTE: the row should start from row 1 instead of 0
             _table_str += self.process_row(row_example, row_index=i + 1) + " "
+            if self.add_newline:
+                _table_str += "\n"
         return _table_str.strip()
 
     def process_header(self, headers: List):

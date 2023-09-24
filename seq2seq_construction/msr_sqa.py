@@ -60,7 +60,7 @@ class TrainDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
-            self.tab_processor = get_default_processor(max_cell_length=15,
+            self.tab_processor = get_default_processor(args,max_cell_length=15,
                                                        tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
 
@@ -107,7 +107,7 @@ class DevDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
-            self.tab_processor = get_default_processor(max_cell_length=15,
+            self.tab_processor = get_default_processor(args,max_cell_length=15,
                                                        tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
 
@@ -154,7 +154,7 @@ class TestDataset(Dataset):
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
-            self.tab_processor = get_default_processor(max_cell_length=15,
+            self.tab_processor = get_default_processor(args,max_cell_length=15,
                                                        tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
 

@@ -68,7 +68,7 @@ class TrainDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
-        self.tab_processor = get_default_processor(max_cell_length=100,
+        self.tab_processor = get_default_processor(args,max_cell_length=100,
                                                    # the max_cell_length is bigger in the KVRET,
                                                    # since it have large cell in table of intent weather
                                                    tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
@@ -120,7 +120,7 @@ class DevDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
-        self.tab_processor = get_default_processor(max_cell_length=100,
+        self.tab_processor = get_default_processor(args,max_cell_length=100,
                                                    tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
                                                    max_input_length=args.seq2seq.table_truncation_max_length)
 
@@ -171,7 +171,7 @@ class TestDataset(Dataset):
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
-        self.tab_processor = get_default_processor(max_cell_length=100,
+        self.tab_processor = get_default_processor(args,max_cell_length=100,
                                                    tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
                                                    max_input_length=args.seq2seq.table_truncation_max_length)
         cache_path = os.path.join(cache_root, 'kvret_test.cache')
