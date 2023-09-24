@@ -26,35 +26,13 @@ class Constructor(object):
         return train_dataset, dev_dataset, test_dataset
 
 
-"""
-{
-    "id": datasets.Value("int32"),
-    "table": {
-        "id": datasets.Value("string"),
-        "header": datasets.features.Sequence(datasets.Value("string")),
-        "rows": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("string"))),
-        "caption": datasets.Value("string"),
-    },
-    "statement": datasets.Value("string"),
-    "label": datasets.Value("int32"),
-    "hardness": datasets.Value("string"),
-    "small_test": datasets.Value("bool")
-}
-"""
-# setting label=1 when it's entailed, label=0 when it's refuted.
-label_id2label_str = {
-    1: "entailed",
-    0: "refuted"
-}
-
-
 class TrainDataset(Dataset):
 
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
 
-        cache_path = os.path.join(cache_root, 'tab_fact_train.cache')
+        cache_path = os.path.join(cache_root, 'finqa_train.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
@@ -63,27 +41,25 @@ class TrainDataset(Dataset):
                                                        max_input_length=args.seq2seq.table_truncation_max_length)
 
             self.extended_data = []
-            expansion = args.seq2seq.expansion if args.seq2seq.expansion else 1
-            for expand_id in range(expansion):
-                for raw_data in tqdm(self.raw_datasets):
-                    extend_data = deepcopy(raw_data)
-                    statement = extend_data["statement"].lower()
-                    # This is important to change the question into lower case
-                    # since the letter case is handled badly which inconsistency
-                    # will cause the unwilling truncation.
-                    label_str = label_id2label_str[extend_data["label"]]
+            for raw_data in tqdm(self.raw_datasets):
+                extend_data = deepcopy(raw_data)
+                question = extend_data["question"]
+                # This is important to change the question into lower case
+                # since the letter case is handled badly which inconsistency
+                # will cause the unwilling truncation.
+                table_context = {"header": extend_data['table'][0], "rows": extend_data['table'][1:]}
+                # modify a table internally
 
-                    table_context = {"header": extend_data["table"]["header"], "rows": extend_data["table"]["rows"]}
-                    # modify a table internally
-                    for truncate_func in self.tab_processor.table_truncate_funcs:
-                        truncate_func.truncate_table(table_context, statement, [])
-                    # linearize a table into a string
-                    linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
+                # NOTE this truncation is kind of deprecated - Alex
+                for truncate_func in self.tab_processor.table_truncate_funcs:
+                    truncate_func.truncate_table(table_context, question, [])
+                # linearize a table into a string
+                linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
 
-                    extend_data.update({"struct_in": linear_table.lower(),
-                                        "text_in": statement.lower(),
-                                        "seq_out": label_str.lower()})
-                    self.extended_data.append(extend_data)
+                extend_data.update({"struct_in": " ".join(extend_data['pre_text']).lower() + "\n" + linear_table.lower() + "\n" + " ".join(extend_data['post_text']).lower(),
+                                    "text_in": extend_data["question"].lower(),
+                                    "seq_out": extend_data['answer'].lower()})
+                self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
 
@@ -100,7 +76,7 @@ class DevDataset(Dataset):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
 
-        cache_path = os.path.join(cache_root, 'tab_fact_dev.cache')
+        cache_path = os.path.join(cache_root, 'finqa_dev.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
@@ -111,22 +87,23 @@ class DevDataset(Dataset):
             self.extended_data = []
             for raw_data in tqdm(self.raw_datasets):
                 extend_data = deepcopy(raw_data)
-                statement = extend_data["statement"].lower()
+                question = extend_data["question"]
                 # This is important to change the question into lower case
                 # since the letter case is handled badly which inconsistency
                 # will cause the unwilling truncation.
-                label_str = label_id2label_str[extend_data["label"]]
 
-                table_context = {"header": extend_data["table"]["header"], "rows": extend_data["table"]["rows"]}
+                table_context = {"header": extend_data['table'][0], "rows": extend_data['table'][1:]}
                 # modify a table internally
+
+                # NOTE this truncation is kind of deprecated - Alex
                 for truncate_func in self.tab_processor.table_truncate_funcs:
-                    truncate_func.truncate_table(table_context, statement, [])
+                    truncate_func.truncate_table(table_context, question, [])
                 # linearize a table into a string
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
 
-                extend_data.update({"struct_in": linear_table.lower(),
-                                    "text_in": statement.lower(),
-                                    "seq_out": label_str.lower()})
+                extend_data.update({"struct_in": " ".join(extend_data['pre_text']).lower() + "\n" + linear_table.lower() + "\n" + " ".join(extend_data['post_text']).lower(),
+                                    "text_in": extend_data["question"].lower(),
+                                    "seq_out": extend_data['answer'].lower()})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -137,42 +114,44 @@ class DevDataset(Dataset):
     def __len__(self):
         return len(self.extended_data)
 
-
 class TestDataset(Dataset):
 
     def __init__(self, args, raw_datasets, cache_root):
         # This tab processor is for table truncation and linearize.
         self.raw_datasets = raw_datasets
-        self.tab_processor = get_default_processor(args,max_cell_length=15,
-                                                   tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
-                                                   max_input_length=args.seq2seq.table_truncation_max_length)
 
-        cache_path = os.path.join(cache_root, 'tab_fact_test.cache')
+        cache_path = os.path.join(cache_root, 'finqa_test.cache')
         if os.path.exists(cache_path) and args.dataset.use_cache:
             self.extended_data = torch.load(cache_path)
         else:
+            self.tab_processor = get_default_processor(args,max_cell_length=15,
+                                                       tokenizer=AutoTokenizer.from_pretrained(args.bert.location, use_fast=False),
+                                                       max_input_length=args.seq2seq.table_truncation_max_length)
+
             self.extended_data = []
             for raw_data in tqdm(self.raw_datasets):
                 extend_data = deepcopy(raw_data)
-                statement = extend_data["statement"].lower()
+                question = extend_data["question"]
                 # This is important to change the question into lower case
                 # since the letter case is handled badly which inconsistency
                 # will cause the unwilling truncation.
-                label_str = label_id2label_str[extend_data["label"]]
 
-                table_context = {"header": extend_data["table"]["header"], "rows": extend_data["table"]["rows"]}
+                table_context = {"header": extend_data['table'][0], "rows": extend_data['table'][1:]}
                 # modify a table internally
+
+                # NOTE this truncation is kind of deprecated - Alex
                 for truncate_func in self.tab_processor.table_truncate_funcs:
-                    truncate_func.truncate_table(table_context, statement, [])
+                    truncate_func.truncate_table(table_context, question, [])
                 # linearize a table into a string
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
 
-                extend_data.update({"struct_in": linear_table.lower(),
-                                    "text_in": statement.lower(),
-                                    "seq_out": label_str.lower()})
+                extend_data.update({"struct_in": " ".join(extend_data['pre_text']).lower() + "\n" + linear_table.lower() + "\n" + " ".join(extend_data['post_text']).lower(),
+                                    "text_in": extend_data["question"].lower(),
+                                    "seq_out": extend_data['answer'].lower()})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
+
 
     def __getitem__(self, index) -> T_co:
         return self.extended_data[index]

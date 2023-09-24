@@ -47,3 +47,11 @@ class WrappedSeq2SeqTrainingArguments(Seq2SeqTrainingArguments):
         default=8000, metadata={
             "help": "The port to use for the llama server."}
     )
+    add_newline: bool = field(
+        default=False, metadata={
+            "help": "Whether to add newline between table rows."}
+    )
+    cache_dir: Optional[str] = field(
+        default="cache", metadata={
+            "help": "The directory of the dataset caches."}
+    )

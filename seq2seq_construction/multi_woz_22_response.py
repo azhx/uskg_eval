@@ -169,7 +169,7 @@ class TrainDataset(Dataset):
                             - history_length
                     )
                     for table_context, proportion, table_name in zip(db_tables, proportions, raw_data["services"]):
-                        tab_processor = get_default_processor(
+                        tab_processor = get_default_processor(args,
                             max_cell_length=200,
                             # the max_cell_length is bigger in the MultiWoZ,
                             # e.g. you can check "openhours" in "db/attraction_db.json"
@@ -254,7 +254,7 @@ class DevDataset(Dataset):
                             - history_length
                     )
                     for table_context, proportion, table_name in zip(db_tables, proportions, raw_data["services"]):
-                        tab_processor = get_default_processor(
+                        tab_processor = get_default_processor(args,
                             max_cell_length=200,
                             # the max_cell_length is bigger in the MultiWoZ,
                             # e.g. you can check "openhours" in "db/attraction_db.json"
@@ -339,7 +339,7 @@ class TestDataset(Dataset):
                             - history_length
                     )
                     for table_context, proportion, table_name in zip(db_tables, proportions, raw_data["services"]):
-                        tab_processor = get_default_processor(
+                        tab_processor = get_default_processor(args,
                             max_cell_length=200,
                             # the max_cell_length is bigger in the MultiWoZ,
                             # e.g. you can check "openhours" in "db/attraction_db.json"

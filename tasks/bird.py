@@ -16,7 +16,9 @@
 
 
 import json
-from third_party.spider.preprocess.get_tables import dump_db_json_schema
+import sqlite3
+import sys
+import traceback
 
 import datasets
 
@@ -41,12 +43,105 @@ BIRD (BIg Bench for LaRge-scale Database Grounded Text-to-SQL Evaluation) repres
 
 _HOMEPAGE = "https://bird-bench.github.io/"
 
-_LICENSE = "CC BY-NC 4.0" # non commercial
+_LICENSE = "CC BY-NC 4.0"  # non commercial
 
 
 _TRAINURL = "https://bird-bench.oss-cn-beijing.aliyuncs.com/train.zip"
 _DEVURL = "https://bird-bench.oss-cn-beijing.aliyuncs.com/dev.zip"
 
+
+def convert_fk_index(data):
+    fk_holder = []
+    for fk in data["foreign_keys"]:
+        tn, col, ref_tn, ref_col = fk[0][0], fk[0][1], fk[1][0], fk[1][1]
+        ref_cid, cid = None, None
+        try:
+            # we gotta make this case insensitive
+            lookup = [each.lower() for each in data['table_names_original']]
+            tid = lookup.index(tn.lower())
+            ref_tid = lookup.index(ref_tn.lower())
+
+            for i, (tab_id, col_org) in enumerate(data["column_names_original"]):
+                if tab_id == ref_tid and ref_col == col_org:
+                    ref_cid = i
+                elif tid == tab_id and col == col_org:
+                    cid = i
+            if ref_cid and cid:
+                fk_holder.append([cid, ref_cid])
+        except:
+            traceback.print_exc()
+            print("table_names_original: ", data["table_names_original"])
+            print("finding tab name: ", tn, ref_tn)
+            sys.exit()
+    return fk_holder
+
+
+def dump_db_json_schema(db, f):
+    """read table and column info"""
+
+    conn = sqlite3.connect(db)
+    conn.execute("pragma foreign_keys=ON")
+    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+
+    data = {
+        "db_id": f,
+        "table_names_original": [],
+        "table_names": [],
+        "column_names_original": [(-1, "*")],
+        "column_names": [(-1, "*")],
+        "column_types": ["text"],
+        "primary_keys": [],
+        "foreign_keys": [],
+    }
+
+    fk_holder = []
+    for i, item in enumerate(cursor.fetchall()):
+        table_name = item[0]
+        data["table_names_original"].append(table_name)
+        data["table_names"].append(table_name.lower().replace("_", " "))
+        fks = conn.execute(
+            "PRAGMA foreign_key_list('{}') ".format(table_name)
+        ).fetchall()
+        # print("db:{} table:{} fks:{}".format(f,table_name,fks))
+        fk_holder.extend([[(table_name, fk[3]), (fk[2], fk[4])] for fk in fks])
+        cur = conn.execute("PRAGMA table_info('{}') ".format(table_name))
+        for j, col in enumerate(cur.fetchall()):
+            data["column_names_original"].append((i, col[1]))
+            data["column_names"].append((i, col[1].lower().replace("_", " ")))
+            # varchar, '' -> text, int, numeric -> integer,
+            col_type = col[2].lower()
+            if (
+                "char" in col_type
+                or col_type == ""
+                or "text" in col_type
+                or "var" in col_type
+            ):
+                data["column_types"].append("text")
+            elif (
+                "int" in col_type
+                or "numeric" in col_type
+                or "decimal" in col_type
+                or "number" in col_type
+                or "id" in col_type
+                or "real" in col_type
+                or "double" in col_type
+                or "float" in col_type
+            ):
+                data["column_types"].append("number")
+            elif "date" in col_type or "time" in col_type or "year" in col_type:
+                data["column_types"].append("time")
+            elif "boolean" in col_type:
+                data["column_types"].append("boolean")
+            else:
+                data["column_types"].append("others")
+
+        if col[5] == 1:
+                data["primary_keys"].append(len(data["column_names"]) - 1)
+
+    data["foreign_keys"] = fk_holder
+    data["foreign_keys"] = convert_fk_index(data)
+
+    return data
 
 class BIRD(datasets.GeneratorBasedBuilder):
     VERSION = datasets.Version("1.0.0")
@@ -66,8 +161,9 @@ class BIRD(datasets.GeneratorBasedBuilder):
     def _info(self):
         features = datasets.Features(
             {
-                "query": datasets.Value("string"),
+                "query" : datasets.Value("string"),
                 "question": datasets.Value("string"),
+                #"difficulty": datasets.Value("string"),
                 "db_id": datasets.Value("string"),
                 "db_path": datasets.Value("string"),
                 "db_table_names": datasets.features.Sequence(datasets.Value("string")),
@@ -97,38 +193,54 @@ class BIRD(datasets.GeneratorBasedBuilder):
         )
 
     def _split_generators(self, dl_manager):
-        #downloaded_filepath_train = dl_manager.download_and_extract(_TRAINURL)
+        # downloaded_filepath_train = dl_manager.download_and_extract(_TRAINURL)
         # TODO: we only load the dev data for now, we are holding out this dataset
+        downloaded_filepath_train = dl_manager.download_and_extract(_TRAINURL)
+        downloaded_database_train = dl_manager.extract(
+            downloaded_filepath_train + "/train/train_databases.zip")
         downloaded_filepath_dev = dl_manager.download_and_extract(_DEVURL)
-        downloaded_database_dev = dl_manager.extract(downloaded_filepath_dev + "/dev_20230613/dev_databases.zip")
+        downloaded_database_dev = dl_manager.extract(
+            downloaded_filepath_dev + "/dev_20230613/dev_databases.zip")
 
         return [
             datasets.SplitGenerator(
+                name=datasets.Split.TRAIN,
+                gen_kwargs={
+                    "data_filepath": downloaded_filepath_train + "/train/train.json",
+                    "db_path": downloaded_database_train+"/train_databases",
+                    "schema_path":downloaded_filepath_train+"/train/train_tables.json"
+                },
+            ),
+            datasets.SplitGenerator(
                 name=datasets.Split.VALIDATION,
                 gen_kwargs={
-                    "data_filepath": downloaded_filepath_dev+ "/dev_20230613/dev.json",
+                    "data_filepath": downloaded_filepath_dev + "/dev_20230613/dev.json",
                     "db_path": downloaded_database_dev+"/dev_databases",
+                    "schema_path":downloaded_filepath_dev+"/dev_20230613/dev_tables.json"
                 },
             ),
         ]
 
-    def _generate_examples(self, data_filepath, db_path):
+    def _generate_examples(self, data_filepath, db_path, schema_path):
         """This function returns the examples in the raw (text) form."""
         logger.info("generating examples from = %s", data_filepath)
         with open(data_filepath, encoding="utf-8") as f:
-            spider = json.load(f)
-            for idx, sample in enumerate(spider):
-                db_id = sample["db_id"]
+            data = json.load(f)
+            for i, sample in enumerate(data):
+                db_id = sample['db_id']
                 if db_id not in self.schema_cache:
-                    self.schema_cache[db_id] = dump_db_json_schema(
-                        db_path + "/" + db_id + "/" + db_id + ".sqlite", db_id
-                    )
+                        self.schema_cache[db_id] = dump_db_json_schema(
+                            db_path + "/" + db_id + "/" + db_id + ".sqlite", db_id
+                        )
                 schema = self.schema_cache[db_id]
-                yield idx, {
-                    "query": sample["query"],
+                #schema = dump_db_json_schema(db_path + "/" + data[i]['db_id'] + "/" + data[i]['db_id'] + ".sqlite", data[i]['db_id'])
+                #schema = ts_map[data[i]['db_id']]
+                yield i, {
+                    "query": sample["SQL"],
                     "question": sample["question"],
-                    "db_id": db_id,
-                    "db_path": db_path,
+                    #"difficulty": sample["difficulty"],
+                    "db_id": sample["db_id"],
+                    "db_path": db_path + "/" + data[i]['db_id'] + "/" + data[i]['db_id'] + ".sqlite",
                     "db_table_names": schema["table_names_original"],
                     "db_column_names": [
                         {"table_id": table_id, "column_name": column_name}
