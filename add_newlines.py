@@ -1,4 +1,5 @@
 import json
+from tqdm import tqdm
 
 def replace_row_number(string):
     import re
@@ -6,13 +7,13 @@ def replace_row_number(string):
     new_string = re.sub(pattern, lambda m: "\n" + m.group(0), string)
     return new_string
 
-with open("llama_data_v7_non_upsampled.json", "rb") as f:
+with open("llama_data_v9_nurcs_newline.json", "rb") as f:
     data = json.load(f)
 
-for i, ex in enumerate(data):
+for i, ex in tqdm(enumerate(data)):
     if "struct_in" in ex and len(ex["struct_in"]) > 0:
         data[i]["struct_in"] = replace_row_number(ex["struct_in"])
 
-with open("llama_data_v7_non_upsampled.json", "w") as f:
+with open("llama_data_v9_nurcs_newline.json", "w") as f:
     json.dump(data, f, indent=4)
     
