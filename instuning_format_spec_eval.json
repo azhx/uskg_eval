@@ -154,5 +154,25 @@
         "instruction": "Given the following database schema, convert the following question to an SQL query",
         "input_format": "database schema:\n\n<struct_in>\n\n\nquestion:\n\n<text_in>",
         "output_format": "<seq_out>"
+    },
+    "tabmwp": {
+        "instruction": "Use the information in the following table to solve the problem, choose between the choices if they are provided.",
+        "input_format": "table:\n\n<struct_in>\n\n\nquestion:\n\n<text_in>",
+        "output_format": "<seq_out>"
+    },
+    "logicnlg": {
+        "instruction": "Use the information in the following table to infer a fact about the subjects in the table",
+        "input_format": "<struct_in>",
+        "output_format": "<seq_out>"
+    },
+    "finqa": {
+        "instruction": "Given the following table and context, answer the following question.",
+        "input_format": "table:\n\n<struct_in>\n\n\nquestion:\n\n<text_in>",
+        "output_format": "<seq_out>"
+    },
+    "infotabs": {
+        "instruction": "Using the following table, determine if the statement is E (entailed), N (neutral/irrelvant), or C (contradicted) by the information in the table.",
+        "input_format": "table:\n\n<struct_in>\n\n\nstatement:\n\n<text_in>",
+        "output_format": "<seq_out>"
     }
 }
