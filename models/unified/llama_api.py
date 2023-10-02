@@ -52,6 +52,9 @@ class Model(nn.Module):
             }   
         ).json()
 
+        # print the result
+        print(self.tokenizer.batch_decode(input_ids))
+        print(self.tokenizer.batch_decode(res['tokens']))
         # remake the tensor
         res['tokens'] = torch.tensor(res['tokens']).cuda()
 

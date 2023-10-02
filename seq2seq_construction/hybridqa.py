@@ -66,8 +66,7 @@ class TrainDataset(Dataset):
                     for truncate_func in self.tab_processor.table_truncate_funcs:
                         truncate_func.truncate_table(table_context, question, [])
                     linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
-                    table_passage_context = linear_table + passage_context_str
-
+                    table_passage_context = linear_table + "\n" + passage_context_str
                     extend_data.update({"struct_in": table_passage_context.lower(),
                                         "text_in": question.lower(),
                                         "seq_out": gold_result.lower()})
@@ -109,7 +108,7 @@ class DevDataset(Dataset):
                     for truncate_func in self.tab_processor.table_truncate_funcs:
                         truncate_func.truncate_table(table_context, question, [])
                     linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
-                    table_passage_context = linear_table + passage_context_str
+                    table_passage_context = linear_table + "\n" + passage_context_str
 
                     extend_data.update({"struct_in": table_passage_context.lower(),
                                         "text_in": question.lower(),

@@ -64,6 +64,12 @@ class TokenizedDataset(Dataset):
             else:
                 raise ValueError()
 
+        if self.args.prompt_spec.dataset_name == "logicnlg":
+            seq_in ="use the information in the table to infer a fact about the subjects in the table ; " + seq_in
+        # elif self.args.prompt_spec.dataset_name == "finqa":
+        #     seq_in += " ; let's think step by step:"
+        elif self.args.prompt_spec.dataset_name == "infotabs":
+            pass
         # Concatenate description.
         if self.args.model.use_description and self.args.model.concatenate_description:
             seq_in = "{} ; {}".format(raw_item["description"], seq_in)
@@ -167,6 +173,8 @@ class TokenizedLlamaDataset(Dataset):
             pre_struct = self.instuning_format.format(struct_in=raw_item['struct_in'])
 
         # get the char index of when the struct starts and ends
+        if self.args.prompt_spec.dataset_name == "finqa":
+            pre_struct += "Let's think step by step:"
         struct_start = pre_struct.find(raw_item['struct_in']) 
         struct_end = struct_start + len(raw_item['struct_in'])
         seq_in = self.tokenizer(pre_struct)

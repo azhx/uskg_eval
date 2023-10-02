@@ -76,10 +76,9 @@ class TrainDataset(Dataset):
                     table_context = {"header": header, "rows": rows}
                     # linearize a table into a string
                     linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
-
                     extend_data.update({"struct_in": linear_table.lower(),
                                         "text_in": "",
-                                        "seq_out": extend_data['sentences']})
+                                        "seq_out": "|".join(extend_data['sentences'])})
                     self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -120,7 +119,7 @@ class DevDataset(Dataset):
 
                 extend_data.update({"struct_in": linear_table.lower(),
                                     "text_in": "",
-                                    "seq_out": extend_data['sentences']})
+                                    "seq_out": "|".join(extend_data['sentences'])})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -160,7 +159,7 @@ class TestDataset(Dataset):
 
                 extend_data.update({"struct_in": linear_table.lower(),
                                     "text_in": "",
-                                    "seq_out": extend_data['sentences']})
+                                    "seq_out": "|".join(extend_data['sentences'])}) # HACK LEVEL: EXTREME
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
