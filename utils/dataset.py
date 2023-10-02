@@ -166,10 +166,13 @@ class TokenizedLlamaDataset(Dataset):
         else:
             pre_struct = self.instuning_format.format(struct_in=raw_item['struct_in'])
 
+        # if self.args.prompt_spec.dataset_name == "finqa":
+        #     pre_struct += "Let's think step by step:"
         # get the char index of when the struct starts and ends
-        struct_start = pre_struct.find(raw_item['struct_in']) 
+        struct_start = pre_struct.find(raw_item['struct_in'])
         struct_end = struct_start + len(raw_item['struct_in'])
         seq_in = self.tokenizer(pre_struct)
+
         start_struct_token = seq_in.char_to_token(struct_start)
         post_struct_token = seq_in.char_to_token(struct_end)
         diff = max(len(seq_in.input_ids) - self.training_args.input_max_length, 0)
