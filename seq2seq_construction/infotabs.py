@@ -19,10 +19,11 @@ def linearize_table(table_dict):
     key2 | value2
     ....
     """
-    res = []
-    for key, value in table_dict.items():
-        res.append(key + " | " + ", ".join(value))
-    return "\n".join(res)
+    colnames = [key for key in table_dict.keys()]
+    values = [", ".join(value) for value in table_dict.values()]
+    colstr = "col : " + " | ".join(colnames)
+    rowstr = "row 1: " + " | ".join(values)
+    return colstr + " " + rowstr
 
 
 class Constructor(object):

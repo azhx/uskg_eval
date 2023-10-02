@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from torch import nn
-from .base import PushToHubFriendlyModel
+#from .base import PushToHubFriendlyModel
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+import torch
 
 
-class Model(PushToHubFriendlyModel):
+class Model(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
@@ -15,7 +16,13 @@ class Model(PushToHubFriendlyModel):
         self.tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
         self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
             args.bert.location,
+            device_map="auto",
         )
+        state_dict = torch.load(args.bert.location + "/pytorch_model.bin") # this is actually some of the most ridiculous hacking i've ever done, holy ****
+        state_dict = {k[len("pretrain_model."):] : v for k, v in state_dict.items()}
+        self.pretrain_model.load_state_dict(state_dict)
+        self.pretrain_model.to("cuda")
+        print("model device", self.pretrain_model.device)
         self.config = self.pretrain_model.config
 
         if args.special_tokens:
@@ -38,5 +45,9 @@ class Model(PushToHubFriendlyModel):
             use_cache=True,
             **kwargs,
         )
+        # print the input that is not masked
+        # find the first zero in the attention mask
+        print(self.tokenizer.batch_decode(input_ids[:,:attention_mask.sum()]))
+        print(self.tokenizer.batch_decode(generated_ids))
 
         return generated_ids

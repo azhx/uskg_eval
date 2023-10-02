@@ -64,6 +64,12 @@ class TokenizedDataset(Dataset):
             else:
                 raise ValueError()
 
+        if self.args.prompt_spec.dataset_name == "logicnlg":
+            seq_in ="use the information in the table to infer a fact about the subjects in the table ; " + seq_in
+        # elif self.args.prompt_spec.dataset_name == "finqa":
+        #     seq_in += " ; let's think step by step:"
+        elif self.args.prompt_spec.dataset_name == "infotabs":
+            pass
         # Concatenate description.
         if self.args.model.use_description and self.args.model.concatenate_description:
             seq_in = "{} ; {}".format(raw_item["description"], seq_in)

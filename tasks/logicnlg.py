@@ -36,6 +36,7 @@ class LogicNLG(datasets.GeneratorBasedBuilder):
                 # "filename": datasets.Value("string"),
                 "table": datasets.Value("string"),
                 "sentences": datasets.features.Sequence(datasets.Value("string")),
+                "templates": datasets.features.Sequence(datasets.Value("string"))
             }
         )
         return datasets.DatasetInfo(
@@ -82,7 +83,9 @@ class LogicNLG(datasets.GeneratorBasedBuilder):
                 # some values could be nans, so we will convert all row items into strings
                 table = {k: [str(each) for each in v] for k, v in table.items()}
                 sentences = [each[0] for each in example]
+                templates = [each[3] for each in example]
                 yield k, {
                 "table": str(table),
                 "sentences": sentences,
+                "templates": templates
             }

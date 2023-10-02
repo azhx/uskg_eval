@@ -329,7 +329,12 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
     ) -> EvalPrediction:
         assert isinstance(examples, Dataset)
 
-        predictions = self.tokenizer.batch_decode(predictions, skip_special_tokens=True)
+        try:
+            predictions = self.tokenizer.batch_decode(predictions, skip_special_tokens=True)
+        except:
+            import pickle
+            with open(f"{self.args.output_dir}/preds.pkl", "wb") as f:
+                pickle.dump(predictions, f)
 
         # Save locally.
         if self.args.local_rank <= 0:

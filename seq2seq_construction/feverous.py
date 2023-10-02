@@ -88,7 +88,7 @@ class TrainDataset(Dataset):
                         linear_table += table_context_str + " "
 
                     passage_context_str = " ".join(contexts)
-                    extend_data.update({"struct_in": linear_table.lower() + passage_context_str.lower(),
+                    extend_data.update({"struct_in": linear_table.lower() + "\n" +passage_context_str.lower(),
                                         "text_in": statement.lower(),
                                         "seq_out": label_str.lower()})
                     self.extended_data.append(extend_data)
@@ -139,7 +139,7 @@ class DevDataset(Dataset):
                     for table_context_str in table_contexts_strs:
                         linear_table += table_context_str + " "
                     passage_context_str = " ".join(contexts)
-                    extend_data.update({"struct_in": linear_table.lower() + passage_context_str.lower(),
+                    extend_data.update({"struct_in": linear_table.lower() + "\n" +passage_context_str.lower(),
                                         "text_in": statement.lower(),
                                         "seq_out": label_str.lower()})
                     self.extended_data.append(extend_data)
