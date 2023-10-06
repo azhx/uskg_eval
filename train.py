@@ -81,32 +81,43 @@ def main() -> None:
 
     # The inputs will be train, dev, test or train, dev now.
     # We deprecate the k-fold cross-valid function since it causes too many avoidable troubles.
-
-    if not args.arg_paths:
-        cache_root = os.path.join('output', 'cache')
-        os.makedirs(cache_root, exist_ok=True)
-        raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=args.dataset.loader_path,
-                                                                         cache_dir=args.dataset.data_store_path)
-        seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
-            raw_datasets_split, cache_root)
+    
+    # check if train, eval, test already exist
+    if training_args.local_rank <= 0 and os.path.exists("./t5_datasets.pkl"):
+        import pickle
+        with open("./t5_datasets.pkl", "rb") as f:
+            seq2seq_dataset_split = pickle.load(f)
     else:
-        cache_root = os.path.join('output', 'cache')
-        os.makedirs(cache_root, exist_ok=True)
-        meta_tuning_data = {}
-        for task, arg_path in args.arg_paths:
-            task_args = Configure.Get(arg_path)
-            task_args.bert = args.bert
-            print('task_args.bert.location:', task_args.bert.location)
-            task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
-                path=task_args.dataset.loader_path,
-                cache_dir=task_args.dataset.data_store_path)
-            task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
-                to_seq2seq(task_raw_datasets_split, cache_root)
+        if not args.arg_paths:
+            cache_root = os.path.join('output', 'cache')
+            os.makedirs(cache_root, exist_ok=True)
+            raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=args.dataset.loader_path,
+                                                                            cache_dir=args.dataset.data_store_path)
+            seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
+                raw_datasets_split, cache_root)
+        else:
+            cache_root = os.path.join('output', 'cache')
+            os.makedirs(cache_root, exist_ok=True)
+            meta_tuning_data = {}
+            for task, arg_path in args.arg_paths:
+                task_args = Configure.Get(arg_path)
+                task_args.bert = args.bert
+                print('task_args.bert.location:', task_args.bert.location)
+                task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
+                    path=task_args.dataset.loader_path,
+                    cache_dir=task_args.dataset.data_store_path)
+                task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
+                    to_seq2seq(task_raw_datasets_split, cache_root)
 
-            meta_tuning_data[arg_path] = task_seq2seq_dataset_split
+                meta_tuning_data[arg_path] = task_seq2seq_dataset_split
 
-        seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
-            to_seq2seq(meta_tuning_data)
+            seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
+                to_seq2seq(meta_tuning_data)
+        if training_args.local_rank <= 0:
+            # save it all into one pickle file
+            import pickle
+            with open(os.path.join("./t5_datasets.pkl"), "wb") as f:
+                pickle.dump(seq2seq_dataset_split, f)
 
     evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
     model = utils.tool.get_model(args.model.name)(args)
@@ -122,7 +133,7 @@ def main() -> None:
 
     # We wrap the "string" seq2seq data into "tokenized tensor".
     train_dataset = TokenizedDataset(args, training_args, model_tokenizer,
-                                     seq2seq_train_dataset) if seq2seq_train_dataset else None
+                                    seq2seq_train_dataset) if seq2seq_train_dataset else None
     eval_dataset = TokenizedDataset(args, training_args, model_tokenizer,
                                     seq2seq_eval_dataset) if seq2seq_eval_dataset else None
     test_dataset = TokenizedDataset(args, training_args, model_tokenizer,

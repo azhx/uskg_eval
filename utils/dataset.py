@@ -64,12 +64,12 @@ class TokenizedDataset(Dataset):
             else:
                 raise ValueError()
 
-        if self.args.prompt_spec.dataset_name == "logicnlg":
-            seq_in ="use the information in the table to infer a fact about the subjects in the table ; " + seq_in
+        # if self.args.prompt_spec.dataset_name == "logicnlg":
+        #     seq_in ="use the information in the table to infer a fact about the subjects in the table ; " + seq_in
         # elif self.args.prompt_spec.dataset_name == "finqa":
         #     seq_in += " ; let's think step by step:"
-        elif self.args.prompt_spec.dataset_name == "infotabs":
-            pass
+        # elif self.args.prompt_spec.dataset_name == "infotabs":
+        #     pass
         # Concatenate description.
         if self.args.model.use_description and self.args.model.concatenate_description:
             seq_in = "{} ; {}".format(raw_item["description"], seq_in)
@@ -149,10 +149,13 @@ class TokenizedLlamaDataset(Dataset):
             prompt_spec = json.load(f)
         self.format_spec = prompt_spec[args.prompt_spec.dataset_name]
 
+        # self.instuning_format = (
+        #     "Below is an instruction that describes a task, paired with an input that provides further context. "
+        #     "Write a response that appropriately completes the request.\n\n"
+        #     "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
+        #)
         self.instuning_format = (
-            "Below is an instruction that describes a task, paired with an input that provides further context. "
-            "Write a response that appropriately completes the request.\n\n"
-            "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
+            "[INST] {instruction}\n\n{input} [/INST] "
         )
         # format the above string by insserting instruction
         if (type(self.format_spec['instruction']) == list):

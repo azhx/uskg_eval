@@ -15,6 +15,7 @@ class Model(nn.Module):
         self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
             args.bert.location,
         )
+        self.gradient_checkpointing_enable = self.pretrain_model.gradient_checkpointing_enable
         self.config = self.pretrain_model.config
 
         if args.special_tokens:

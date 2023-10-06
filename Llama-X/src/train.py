@@ -41,6 +41,9 @@ PROMPT_DICT = {
         "Write a response that appropriately completes the request.\n\n"
         "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
     ),
+    # "prompt_input": (
+    #     "[INST] {instruction}\n\n[INPUT] {input} [/INST] "
+    # ),
     "prompt_no_input": (
         "Below is an instruction that describes a task. "
         "Write a response that appropriately completes the request.\n\n"
@@ -229,7 +232,7 @@ def skg_train_tokenize_function(examples, tokenizer, has_instruction):
     labels = []
     # convert dict of lists to a list of dicts
     batch = [dict(zip(examples, t)) for t in zip(*examples.values())]
-    for example in batch:
+    for i, example in enumerate(batch):
         if has_instruction:
             format_str = prompt_input.format(instruction=example['instruction'], input=example['input_format'])
             data_dict = skg_preprocess_and_tokenize(example, format_str, tokenizer)

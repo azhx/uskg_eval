@@ -41,6 +41,8 @@ class Model(nn.Module):
 
         # add kwargs to the generation config
         generation_config.update(kwargs)
+        if "pad_token_id" not in generation_config.keys():
+            generation_config['pad_token_id'] = self.tokenizer.eos_token_id
         res = requests.post(
             f"{self.args.llama.url}/generate_from_tokens", #TODO remember to add an args for thiss
             json={

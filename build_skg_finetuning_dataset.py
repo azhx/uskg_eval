@@ -59,11 +59,11 @@ def build_input(strut, text, tokenizer):
     return tokenizer(strut)['input_ids'] + tokenizer(text)['input_ids']
 
 def main(args):
-    with open('./instuning_format_spec_rs.json') as f:
+    with open(args.spec_file) as f:
         spec = json.load(f)
-    held_out_datasets = ['cosql', 'sqa', 'bird', 'grailqa', 'webqsp', 'compwebq']
+    held_out_datasets = ['cosql', 'mmqa', 'sqa', 'bird', 'grailqa', 'webqsp', 'compwebq']
     # alpaca_data_path = './alpaca_data.json'
-    dataset_json_path = [(f"./ukg_data/{key}_train.json", v)  for key, v in spec.items() if key not in held_out_datasets]
+    dataset_json_path = [(f"./processed/{key}_train.json", v)  for key, v in spec.items() if key not in held_out_datasets]
 
     # load alpaca data
     # with open(alpaca_data_path) as f:
@@ -114,11 +114,14 @@ def main(args):
             #     continue
             cur_dataset.append(datapoint)
 
-        upsampled_dataset = upsample(cur_dataset, upsampling_weights[path])
-        all_data += upsampled_dataset
-
+        if args.upsample:
+            upsampled_dataset = upsample(cur_dataset, upsampling_weights[path])
+            all_data += upsampled_dataset
+            print(f"upsampled by weight {upsampling_weights[path]} to {len(upsampled_dataset)}")
+        else:
+            all_data += cur_dataset
         print(f"{path}: {len(cur_dataset)}")
-        print(f"upsampled by weight {upsampling_weights[path]} to {len(upsampled_dataset)}")
+
     
     # # shuffle alpaca data
     # random.shuffle(alpaca_data)
@@ -138,6 +141,10 @@ if __name__ == '__main__':
     # argparse for output file name
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', type=str, default='llama_data.json')
+    # upsample or not
+    parser.add_argument('--upsample', action='store_true')
+    parser.add_argument('--spec_file', type=str, default='./instuning_format_spec.json')
+
     args = parser.parse_args()
 
     try:
