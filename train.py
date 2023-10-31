@@ -17,6 +17,8 @@ from utils.configue import Configure
 from utils.dataset import TokenizedDataset
 from utils.trainer import EvaluateFriendlySeq2SeqTrainer
 from utils.training_arguments import WrappedSeq2SeqTrainingArguments
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
 
 # Huggingface realized the "Seq2seqTrainingArguments" which is the same with "WrappedSeq2SeqTrainingArguments"
 # in transformers==4.10.1 during our work.
@@ -83,8 +85,8 @@ def main() -> None:
     # We deprecate the k-fold cross-valid function since it causes too many avoidable troubles.
     
     # check if train, eval, test already exist
-    if training_args.local_rank <= 0 and os.path.exists("./t5_datasets.pkl"):
-        import pickle
+    import pickle
+    if training_args.do_train and os.path.exists("./t5_datasets.pkl"):
         with open("./t5_datasets.pkl", "rb") as f:
             seq2seq_dataset_split = pickle.load(f)
     else:
@@ -116,12 +118,18 @@ def main() -> None:
         if training_args.local_rank <= 0:
             # save it all into one pickle file
             import pickle
-            with open(os.path.join("./t5_datasets.pkl"), "wb") as f:
-                pickle.dump(seq2seq_dataset_split, f)
-
+            if training_args.do_train:
+                with open(os.path.join("./t5_datasets.pkl"), "wb") as f:
+                    pickle.dump(seq2seq_dataset_split, f)
+    
     evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
-    model = utils.tool.get_model(args.model.name)(args)
-    model_tokenizer = model.tokenizer
+    # model = utils.tool.get_model(args.model.name)(args)
+    # model_tokenizer = model.tokenizer
+    model = AutoModelForSeq2SeqLM.from_pretrained(args.bert.location)
+    model_tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
+    if args.special_tokens:
+        model_tokenizer.add_tokens([v for k, v in args.special_tokens])
+        model.resize_token_embeddings(len(model_tokenizer), pad_to_multiple_of=128)
 
     seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = None, None, None
     if len(seq2seq_dataset_split) == 2:
@@ -140,7 +148,7 @@ def main() -> None:
                                     seq2seq_test_dataset) if seq2seq_test_dataset else None
 
     # Initialize our Trainer
-    early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=args.seq2seq.patience if args.seq2seq.patience else 5)
+    #early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=args.seq2seq.patience if args.seq2seq.patience else 5)
     trainer = EvaluateFriendlySeq2SeqTrainer(
         args=training_args,
         model=model,
@@ -152,7 +160,7 @@ def main() -> None:
         eval_dataset=eval_dataset,
         eval_examples=seq2seq_eval_dataset,
         wandb_run_dir=wandb.run.dir if "wandb" in training_args.report_to and training_args.local_rank <= 0 else None,
-        callbacks=[early_stopping_callback],
+     #   callbacks=[early_stopping_callback],
     )
     print('Trainer build successfully.')
 

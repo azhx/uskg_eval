@@ -33,8 +33,8 @@ SCRIPT="train.py"
 SCRIPT_ARGS=(--model_name_or_path ${MODEL_DIR} \
     --data_path "${DATA_PATH}" \
     --output_dir ${OUTPUT_DIR} \
-    --pkl_path "cl_2048_nommqa.pkl" \
-    --has_instruction True \
+    --pkl_path "cl_2048_nommqa_noinst.pkl" \
+    --has_instruction False \
     --dataset_type="skg" \
     --num_train_epochs 3 \
     --model_max_length 2048 \

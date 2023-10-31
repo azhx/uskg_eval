@@ -18,12 +18,13 @@ class Model(nn.Module):
             args.bert.location,
             device_map="auto",
         )
-        state_dict = torch.load(args.bert.location + "/pytorch_model.bin") # this is actually some of the most ridiculous hacking i've ever done, holy ****
-        state_dict = {k[len("pretrain_model."):] : v for k, v in state_dict.items()}
-        self.pretrain_model.load_state_dict(state_dict)
+        # state_dict = torch.load(args.bert.location + "/pytorch_model.bin") # really bad hack
+        # state_dict = {k[len("pretrain_model."):] : v for k, v in state_dict.items()}
+        # self.pretrain_model.load_state_dict(state_dict)
         self.pretrain_model.to("cuda")
         print("model device", self.pretrain_model.device)
         self.config = self.pretrain_model.config
+        self.save_pretrained = self.pretrain_model.save_pretrained
 
         if args.special_tokens:
             self.tokenizer.add_tokens([v for k, v in args.special_tokens])
