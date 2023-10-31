@@ -17,3 +17,6 @@
 [submodule "third_party/sparc"]
 	path = third_party/sparc
 	url = https://github.com/taoyds/sparc.git
+[submodule "third_party/third_party/sparc"]
+	path = third_party/third_party/sparc
+	url = https://github.com/Victor0118/sparc.git
