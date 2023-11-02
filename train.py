@@ -17,6 +17,8 @@ from utils.configue import Configure
 from utils.dataset import TokenizedDataset
 from utils.trainer import EvaluateFriendlySeq2SeqTrainer
 from utils.training_arguments import WrappedSeq2SeqTrainingArguments
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
 
 # Huggingface realized the "Seq2seqTrainingArguments" which is the same with "WrappedSeq2SeqTrainingArguments"
 # in transformers==4.10.1 during our work.
@@ -81,36 +83,53 @@ def main() -> None:
 
     # The inputs will be train, dev, test or train, dev now.
     # We deprecate the k-fold cross-valid function since it causes too many avoidable troubles.
-
-    if not args.arg_paths:
-        cache_root = os.path.join('output', 'cache')
-        os.makedirs(cache_root, exist_ok=True)
-        raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=args.dataset.loader_path,
-                                                                         cache_dir=args.dataset.data_store_path)
-        seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
-            raw_datasets_split, cache_root)
+    
+    # check if train, eval, test already exist
+    import pickle
+    if training_args.do_train and os.path.exists("./t5_datasets.pkl"):
+        with open("./t5_datasets.pkl", "rb") as f:
+            seq2seq_dataset_split = pickle.load(f)
     else:
-        cache_root = os.path.join('output', 'cache')
-        os.makedirs(cache_root, exist_ok=True)
-        meta_tuning_data = {}
-        for task, arg_path in args.arg_paths:
-            task_args = Configure.Get(arg_path)
-            task_args.bert = args.bert
-            print('task_args.bert.location:', task_args.bert.location)
-            task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
-                path=task_args.dataset.loader_path,
-                cache_dir=task_args.dataset.data_store_path)
-            task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
-                to_seq2seq(task_raw_datasets_split, cache_root)
+        if not args.arg_paths:
+            cache_root = os.path.join('output', 'cache')
+            os.makedirs(cache_root, exist_ok=True)
+            raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=args.dataset.loader_path,
+                                                                            cache_dir=args.dataset.data_store_path)
+            seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
+                raw_datasets_split, cache_root)
+        else:
+            cache_root = os.path.join('output', 'cache')
+            os.makedirs(cache_root, exist_ok=True)
+            meta_tuning_data = {}
+            for task, arg_path in args.arg_paths:
+                task_args = Configure.Get(arg_path)
+                task_args.bert = args.bert
+                print('task_args.bert.location:', task_args.bert.location)
+                task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
+                    path=task_args.dataset.loader_path,
+                    cache_dir=task_args.dataset.data_store_path)
+                task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
+                    to_seq2seq(task_raw_datasets_split, cache_root)
 
-            meta_tuning_data[arg_path] = task_seq2seq_dataset_split
+                meta_tuning_data[arg_path] = task_seq2seq_dataset_split
 
-        seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
-            to_seq2seq(meta_tuning_data)
-
+            seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
+                to_seq2seq(meta_tuning_data)
+        if training_args.local_rank <= 0:
+            # save it all into one pickle file
+            import pickle
+            if training_args.do_train:
+                with open(os.path.join("./t5_datasets.pkl"), "wb") as f:
+                    pickle.dump(seq2seq_dataset_split, f)
+    
     evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
-    model = utils.tool.get_model(args.model.name)(args)
-    model_tokenizer = model.tokenizer
+    # model = utils.tool.get_model(args.model.name)(args)
+    # model_tokenizer = model.tokenizer
+    model = AutoModelForSeq2SeqLM.from_pretrained(args.bert.location)
+    model_tokenizer = AutoTokenizer.from_pretrained(args.bert.location, use_fast=False)
+    if args.special_tokens:
+        model_tokenizer.add_tokens([v for k, v in args.special_tokens])
+        model.resize_token_embeddings(len(model_tokenizer), pad_to_multiple_of=128)
 
     seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = None, None, None
     if len(seq2seq_dataset_split) == 2:
@@ -122,14 +141,14 @@ def main() -> None:
 
     # We wrap the "string" seq2seq data into "tokenized tensor".
     train_dataset = TokenizedDataset(args, training_args, model_tokenizer,
-                                     seq2seq_train_dataset) if seq2seq_train_dataset else None
+                                    seq2seq_train_dataset) if seq2seq_train_dataset else None
     eval_dataset = TokenizedDataset(args, training_args, model_tokenizer,
                                     seq2seq_eval_dataset) if seq2seq_eval_dataset else None
     test_dataset = TokenizedDataset(args, training_args, model_tokenizer,
                                     seq2seq_test_dataset) if seq2seq_test_dataset else None
 
     # Initialize our Trainer
-    early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=args.seq2seq.patience if args.seq2seq.patience else 5)
+    #early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=args.seq2seq.patience if args.seq2seq.patience else 5)
     trainer = EvaluateFriendlySeq2SeqTrainer(
         args=training_args,
         model=model,
@@ -141,7 +160,7 @@ def main() -> None:
         eval_dataset=eval_dataset,
         eval_examples=seq2seq_eval_dataset,
         wandb_run_dir=wandb.run.dir if "wandb" in training_args.report_to and training_args.local_rank <= 0 else None,
-        callbacks=[early_stopping_callback],
+     #   callbacks=[early_stopping_callback],
     )
     print('Trainer build successfully.')
 

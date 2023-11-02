@@ -42,17 +42,18 @@ def generate_run_cfg(args):
 
     # bert Note: legacy
     config['bert'] = {}
-    config['bert']['location'] = 't5-3b'
+    config['bert']['location'] = args.bert_location
 
     # llama
     config['llama'] = {}
-    config['llama']['url'] = args.api_url
+    #config['llama']['url'] = args.api_url
     config['llama']['model_path'] = args.model_path
 
     # prompt_spec
     config['prompt_spec'] = {}
     config['prompt_spec']['dataset_name'] = args.dataset_name
     config['prompt_spec']['path'] = args.prompt_spec_path
+    config['prompt_spec']['few_shot_path'] = args.few_shot_path
 
     # debug
     config['debug'] = {}
@@ -70,7 +71,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--arg_path', type=str, default='META_TUNING/spider_with_cell.cfg', help='arg path')
     parser.add_argument('--dataset_name', type=str, default='spider', help='dataset name')
-    parser.add_argument('--api_url', type=str, default='http://localhost:8090', help='api url')
+    #parser.add_argument('--api_url', type=str, default='http://localhost:8090', help='api url')
     parser.add_argument('--model_path', type=str, default='/mnt/tjena/alex/vaughan/ckpt7', help='api model path')
 
 
@@ -81,18 +82,17 @@ if __name__ == '__main__':
     parser.add_argument('--data_store_path', type=str, default='./data', help='data store path')
     parser.add_argument('--constructor', type=str, default='seq2seq_construction.meta_tuning', help='constructor')
     parser.add_argument('--patience', type=int, default=200, help='patience')
-    parser.add_argument('--tool', type=str, default='metrics.meta_tuning.evaluator', help='tool')
-    parser.add_argument('--prompt_spec_path', type=str, default='/home/alex/v3-score/instuning_format_spec_eval_rs.json', help='path')
-    parser.add_argument('--dump_preds', type=bool, default=False, help='dump preds')
+    parser.add_argument('--tool', type=str, default='metrics.meta_tuning.no_evaluation', help='tool')
+    parser.add_argument('--prompt_spec_path', type=str, default='/home/alex/v3-score/instuning_format_spec_eval.json', help='path')
+    parser.add_argument('--dump_preds', type=bool, default=True, help='dump preds')
+    parser.add_argument("--few_shot_path", type=str, default = "", help="path to few shot examples")
+    parser.add_argument("--bert_location", type=str, default="T5-3b", help="location of model")
     args = parser.parse_args()
 
     ### HARDCODING section
     #TODO undo this hack later if/when we need more general functionality
-    dataset_names = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp", 'totto', 'webqsp', 'sqa', 'sql2text', 'spider', 'cosql', 'kvret', 'hybridqa', 'sparc', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'mmqa', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
-    datasets = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp", 'totto', 'webqsp', 'sqa', 'sql2text', 'spider_with_cell', 'cosql_with_cell', 'kvret', 'hybridqa', 'sparc_with_cell', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'mmqa', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
-
-    # dataset_names = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp"]
-    # datasets = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp"]
+    dataset_names = ['bird', 'logicnlg', 'tabmwp', 'finqa', 'infotabs', 'totto', 'webqsp', 'sqa', 'sql2text', 'spider', 'cosql', 'kvret', 'hybridqa', 'sparc', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
+    datasets = ['bird', 'logicnlg', 'tabmwp', 'finqa', 'infotabs', 'totto', 'webqsp', 'sqa', 'sql2text', 'spider_with_cell', 'cosql_with_cell', 'kvret', 'hybridqa', 'sparc_with_cell', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
 
     server1 = ["spider", "compwebq", "fetaqa", "hybridqa", "mmqa", "sql2text", "dart", "totto", "wikitq"]
     server2 = ["cosql", "sparc", "tab_fact", "wikisql", "feverous", "kvret", "mtop"]
@@ -105,16 +105,15 @@ if __name__ == '__main__':
             
     datasets.sort()
     dataset_names.sort()
-    api_urls = ["http://localhost:8090", "http://localhost:8091", "http://localhost:8092"]
+    #api_urls = ["http://localhost:8090", "http://localhost:8091", "http://localhost:8092"]
     # add .cfg to the end
     datasets = [f"META_TUNING/{d}.cfg" for d in datasets]
     assert len(dataset_names) == len(datasets)
 
     for i, dataset in enumerate(datasets):
-
         args.dataset_name = dataset_names[i]
         args.arg_path = dataset
         #args.api_url = api_urls[servermap[args.dataset_name]]
-        args.output_path = f"/home/alex/v3-score/UnifiedSKG/configure/Salesforce/{args.run_name}_{args.dataset_name}.cfg"
+        args.output_path = f"/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/configure/Salesforce/{args.run_name}_{args.dataset_name}.cfg"
         generate_run_cfg(args)
 

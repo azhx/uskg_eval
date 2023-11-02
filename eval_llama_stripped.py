@@ -56,6 +56,10 @@ def main() -> None:
     for task, arg_path in args.arg_paths:
         task_args = Configure.Get(arg_path)
         task_args.bert = args.bert
+        # add newline for tables can come from training args or task (experiment) cfg args
+        task_args.add_newline = args.add_newline
+        if training_args.add_newline:
+            task_args.add_newline = True
         print('task_args.bert.location:', task_args.bert.location)
         task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
             to_seq2seq(placeholder, cache_root)
@@ -81,12 +85,11 @@ def main() -> None:
 
     # We wrap the "string" seq2seq data into "tokenized tensor".
     train_dataset = TokenizedLlamaDataset(args, training_args, model_tokenizer,
-                                     seq2seq_train_dataset) if seq2seq_train_dataset else None
-
+                                     seq2seq_train_dataset, args.prompt_spec.few_shot_path) if seq2seq_train_dataset else None
     eval_dataset = TokenizedLlamaDataset(args, training_args, model_tokenizer,
-                                    seq2seq_eval_dataset) if seq2seq_eval_dataset else None
+                                    seq2seq_eval_dataset, args.prompt_spec.few_shot_path) if seq2seq_eval_dataset else None
     test_dataset = TokenizedLlamaDataset(args, training_args, model_tokenizer,
-                                    seq2seq_test_dataset) if seq2seq_test_dataset else None
+                                    seq2seq_test_dataset, args.prompt_spec.few_shot_path) if seq2seq_test_dataset else None
     
     # Initialize our Trainer
     early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=args.seq2seq.patience if args.seq2seq.patience else 5)
@@ -115,7 +118,4 @@ def main() -> None:
         )
 
 if __name__ == "__main__":
-    try:
-        main()
-    except:
-        import pdb; pdb.post_mortem()
+    main()

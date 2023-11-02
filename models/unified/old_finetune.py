@@ -15,7 +15,9 @@ class Model(nn.Module):
         self.pretrain_model = AutoModelForSeq2SeqLM.from_pretrained(
             args.bert.location,
         )
+        self.gradient_checkpointing_enable = self.pretrain_model.gradient_checkpointing_enable
         self.config = self.pretrain_model.config
+        self.save_pretrained = self.pretrain_model.save_pretrained
 
         if args.special_tokens:
             self.tokenizer.add_tokens([v for k, v in args.special_tokens])
