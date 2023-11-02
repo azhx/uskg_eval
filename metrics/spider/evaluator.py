@@ -14,5 +14,4 @@ class EvaluateTool(object):
             preds = [pred.split("|", 1)[-1].strip() for pred in preds]
         exact_match = compute_exact_match_metric(preds, golds)
         test_suite = compute_test_suite_metric(preds, golds, db_dir=self.args.test_suite_db_dir)
-
         return {**exact_match, **test_suite}

@@ -8,7 +8,7 @@ def main(args):
     # use import lib to import EvaluateTool from metrics.{args.dataset_name}.evaluator
     output_path= f"./output/{args.run_name}_{args.dataset_name}"
     predictions_path = os.path.join(output_path,"predictions_predict.json")
-    config_path = f"Salesforce/{args.run_name}_{args.dataset_name}.cfg"
+    config_path = f"Salesforce/non_upsampled_{args.dataset_name}.cfg"
     run_args = Configure.Get(config_path)
     meta_tuning_path = getattr(run_args.arg_paths, args.dataset_name)
     meta_args = Configure.Get(meta_tuning_path)

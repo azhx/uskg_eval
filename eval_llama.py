@@ -83,19 +83,22 @@ def main() -> None:
     # We deprecate the k-fold cross-valid function since it causes too many avoidable troubles.
 
     if not args.arg_paths:
-        cache_root = os.path.join('output', 'cache')
+        cache_root = os.path.join('output', training_args.cache_dir)
         os.makedirs(cache_root, exist_ok=True)
         raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=args.dataset.loader_path,
                                                                          cache_dir=args.dataset.data_store_path)
         seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
             raw_datasets_split, cache_root)
     else:
-        cache_root = os.path.join('output', 'cache')
+        cache_root = os.path.join('output', training_args.cache_dir)
         os.makedirs(cache_root, exist_ok=True)
         meta_tuning_data = {}
         for task, arg_path in args.arg_paths:
             task_args = Configure.Get(arg_path)
             task_args.bert = args.bert
+            task_args.add_newline = args.add_newline
+            if training_args.add_newline:
+                task_args.add_newline = True
             print('task_args.bert.location:', task_args.bert.location)
             task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
                 path=task_args.dataset.loader_path,
@@ -115,6 +118,8 @@ def main() -> None:
         model_tokenizer.pad_token = model_tokenizer.eos_token
 
     seq2seq_train_dataset, seq2seq_eval_dataset, seq2seq_test_dataset = None, None, None
+    if len(seq2seq_dataset_split) == 1:
+        seq2seq_eval_dataset = seq2seq_dataset_split[0]
     if len(seq2seq_dataset_split) == 2:
         seq2seq_train_dataset, seq2seq_eval_dataset = seq2seq_dataset_split
     elif len(seq2seq_dataset_split) == 3:

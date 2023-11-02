@@ -1,4 +1,4 @@
-name: py3.7pytorch1.8new
+name: uskg
 channels:
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
   - defaults

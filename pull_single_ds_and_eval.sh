@@ -1,6 +1,6 @@
 # make the port a variable
 
-REMOTE_PORT=30004
+REMOTE_PORT=30019
 RUN_NAME=$1
 #ex. "non_upsampled_e2"
 DATASET_NAME=$2

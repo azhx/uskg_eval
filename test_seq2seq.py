@@ -15,38 +15,47 @@ from utils.trainer import LlamaSeq2SeqTrainer
 
 # Argparse 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_name', type=str, help='dataset name')
-parser.add_argument('--run_name', type=str, help='run name')
+parser.add_argument('--dataset_name', default ="all", type=str, help='dataset name')
+parser.add_argument('--run_name', default = "non_upsampled", type=str, help='run name')
 parser.add_argument('--cache_dir', type=str, default="cache", help='path to seq2seq cfg')
+parser.add_argument('--add_newline', action='store_true', help='add newline between table rows')
 training_args = parser.parse_args()
 
+
+if training_args.dataset_name == "all":
+# ("wikitq" "hybridqa" "spider" "fetaqa" "sql2text" "tab_fact" "wikisql" "feverous" "kvret" "sparc" "cosql" "sqa" "mmqa" "mtop" "logic2text" "multiwoz" "totto" "dart")
+    dataset_names = ["bird", "logicnlg", "tabmwp", "infotabs", "finqa", "wikitq", "hybridqa", "spider", "fetaqa", "sql2text", "tab_fact", "wikisql", "feverous", "kvret", "sparc", "cosql", "sqa", "mmqa", "mtop", "logic2text", "multiwoz", "totto", "dart"]
+else:
+    dataset_names = [training_args.dataset_name]
 # Load dataset
-dataset_raw_split = datasets.load_dataset(path = f"./tasks/{training_args.dataset_name}.py", cache_dir = "./data")
 
-#
-args = Configure.Get(f"Salesforce/{training_args.run_name}_{training_args.dataset_name}.cfg")
+for dataset_name in dataset_names:
+    dataset_raw_split = datasets.load_dataset(path = f"./tasks/{dataset_name}.py", cache_dir = "./data")
 
-cache_root = os.path.join('output', training_args.cache_dir)
-os.makedirs(cache_root, exist_ok=True)
-meta_tuning_data = {}
-for task, arg_path in args.arg_paths:
-    task_args = Configure.Get(arg_path)
-    task_args.bert = args.bert
-    task_args.add_newline = args.add_newline
-    print('task_args.bert.location:', task_args.bert.location)
-    task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
-        path=task_args.dataset.loader_path,
-        cache_dir=task_args.dataset.data_store_path)
-    task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
-        to_seq2seq(task_raw_datasets_split, cache_root)
+    #
+    args = Configure.Get(f"Salesforce/{training_args.run_name}_{dataset_name}.cfg")
 
-    meta_tuning_data[arg_path] = task_seq2seq_dataset_split
+    cache_root = os.path.join('output', training_args.cache_dir)
+    os.makedirs(cache_root, exist_ok=True)
+    meta_tuning_data = {}
+    for task, arg_path in args.arg_paths:
+        task_args = Configure.Get(arg_path)
+        task_args.bert = args.bert
+        task_args.add_newline = args.add_newline
+        if training_args.add_newline:
+            task_args.add_newline = True
+        print('task_args.bert.location:', task_args.bert.location)
+        task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
+            path=task_args.dataset.loader_path,
+            cache_dir=task_args.dataset.data_store_path)
+        task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
+            to_seq2seq(task_raw_datasets_split, cache_root)
 
-seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
-    to_seq2seq(meta_tuning_data)
+        meta_tuning_data[arg_path] = task_seq2seq_dataset_split
 
-print("dataset constructed")
-import pdb; pdb.set_trace()
+    seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
+        to_seq2seq(meta_tuning_data)
+
 
 # evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
 # model = utils.tool.get_model(args.model.name)(args)

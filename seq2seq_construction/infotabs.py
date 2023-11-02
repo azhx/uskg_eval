@@ -61,9 +61,9 @@ class TrainDataset(Dataset):
                 # modify a table internally
 
                 # linearize a table into a string
-                linear_table = linearize_table(eval(extend_data['table']))
+                kvp = " | ".join([f"{k} : {' , '.join(v)}" for k, v in eval(extend_data['table']).items()])
 
-                extend_data.update({"struct_in": linear_table,
+                extend_data.update({"struct_in": kvp,
                                     "text_in": statement,
                                     "seq_out": extend_data['label']})
                 self.extended_data.append(extend_data)
@@ -98,9 +98,9 @@ class DevDataset(Dataset):
                 # modify a table internally
 
                 # linearize a table into a string
-                linear_table = linearize_table(eval(extend_data['table']))
+                kvp = " | ".join([f"{k} : {' , '.join(v)}" for k, v in eval(extend_data['table']).items()])
 
-                extend_data.update({"struct_in": linear_table,
+                extend_data.update({"struct_in": kvp,
                                     "text_in": statement,
                                     "seq_out": extend_data['label']})
                 self.extended_data.append(extend_data)
@@ -134,9 +134,9 @@ class TestDataset(Dataset):
                 # modify a table internally
 
                 # linearize a table into a string
-                linear_table = linearize_table(eval(extend_data['table']))
+                kvp = " | ".join([f"{k} : {' , '.join(v)}" for k, v in eval(extend_data['table']).items()])
 
-                extend_data.update({"struct_in": linear_table,
+                extend_data.update({"struct_in": kvp,
                                     "text_in": statement,
                                     "seq_out": extend_data['label']})
                 self.extended_data.append(extend_data)

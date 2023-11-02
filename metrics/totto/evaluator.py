@@ -44,7 +44,6 @@ class EvaluateTool(object):
         for metric_name in metric_list:
             metric = load_metric(metric_name)
             processed_preds, processed_golds = postprocess_text(preds, references_s, metric_name)
-
             if metric_name == "sacrebleu":
                 res = metric.compute(predictions=processed_preds, references=processed_golds)
                 summary[metric_name] = res["score"] * 0.01

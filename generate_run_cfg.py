@@ -83,13 +83,16 @@ if __name__ == '__main__':
     parser.add_argument('--patience', type=int, default=200, help='patience')
     parser.add_argument('--tool', type=str, default='metrics.meta_tuning.evaluator', help='tool')
     parser.add_argument('--prompt_spec_path', type=str, default='/home/alex/v3-score/instuning_format_spec_eval_rs.json', help='path')
-    parser.add_argument('--dump_preds', type=bool, default=True, help='dump preds')
+    parser.add_argument('--dump_preds', type=bool, default=False, help='dump preds')
     args = parser.parse_args()
 
     ### HARDCODING section
     #TODO undo this hack later if/when we need more general functionality
-    dataset_names = ['totto', 'webqsp', 'sqa', 'sql2text', 'spider', 'cosql', 'kvret', 'hybridqa', 'sparc', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'mmqa', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
-    datasets = ['totto', 'webqsp', 'sqa', 'sql2text', 'spider_with_cell', 'cosql_with_cell', 'kvret', 'hybridqa', 'sparc_with_cell', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'mmqa', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
+    dataset_names = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp", 'totto', 'webqsp', 'sqa', 'sql2text', 'spider', 'cosql', 'kvret', 'hybridqa', 'sparc', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'mmqa', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
+    datasets = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp", 'totto', 'webqsp', 'sqa', 'sql2text', 'spider_with_cell', 'cosql_with_cell', 'kvret', 'hybridqa', 'sparc_with_cell', 'grailqa', 'compwebq', 'tab_fact', 'wikitq', 'wikisql', 'mmqa', 'fetaqa', 'feverous', 'multiwoz', 'dart', 'logic2text', 'mtop']
+
+    # dataset_names = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp"]
+    # datasets = ["bird", "logicnlg", "infotabs", "finqa", "tabmwp"]
 
     server1 = ["spider", "compwebq", "fetaqa", "hybridqa", "mmqa", "sql2text", "dart", "totto", "wikitq"]
     server2 = ["cosql", "sparc", "tab_fact", "wikisql", "feverous", "kvret", "mtop"]
@@ -111,7 +114,7 @@ if __name__ == '__main__':
 
         args.dataset_name = dataset_names[i]
         args.arg_path = dataset
-        args.api_url = api_urls[servermap[args.dataset_name]]
+        #args.api_url = api_urls[servermap[args.dataset_name]]
         args.output_path = f"/home/alex/v3-score/UnifiedSKG/configure/Salesforce/{args.run_name}_{args.dataset_name}.cfg"
         generate_run_cfg(args)
 

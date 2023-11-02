@@ -1,7 +1,6 @@
 import json
 import sqlite3
 from tqdm import tqdm
-from utils import format_table_schema, construct_db_key_map
 
 def format_table(table, row_num):
     """Format a table into a linearized string
@@ -20,15 +19,19 @@ def format_table(table, row_num):
 if __name__ == '__main__':
 
     # we should include the table schema, and format it like we did in the cosql dataset.
-    with open('./UnifiedSKG/data/downloads/extracted/e6b31a31a315f4c6c5f7852bf3f90ec2cdcb76a426428a7890ca27ee2e120b6b/tabmwp/problems_train.json') as f:
+    with open('./data/downloads/extracted/e6b31a31a315f4c6c5f7852bf3f90ec2cdcb76a426428a7890ca27ee2e120b6b/tabmwp/problems_train.json') as f:
         data = json.load(f)
 
     newdata = []
     for k, v in data.items():
         #data[i]['struct_in'] = format_table_schema(get_database_schema_tables(data[i]['db_id']))
         ex = {}
-        ex['struct_in'] = format_table(v['table_for_pd'], v['row_num']-1)
+        if v['table_title']:
+            ex['struct_in'] = f"{v['table_title']}\n"+format_table(v['table_for_pd'], v['row_num']-1)
+        else:
+            ex['struct_in'] = format_table(v['table_for_pd'], v['row_num']-1)
         ex['table_for_pd'] = v['table_for_pd']
+        ex['table_title'] = v['table_title']
         ex['text_in'] = v['question']
         ex['solution'] = v['solution']
         ex['choices'] = v['choices']
@@ -38,7 +41,7 @@ if __name__ == '__main__':
     # now we want to format it using the same format as the cosql dataset
 
     # save the resulting json
-    with open('./ukg_data/tabmwp_train.json', 'w') as f:
+    with open('../ukg_data/tabmwp_train.json', 'w') as f:
         # dump properly indented
         json.dump(newdata, f, indent=4)
 

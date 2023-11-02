@@ -56,9 +56,14 @@ class TrainDataset(Dataset):
                 # linearize a table into a string
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
 
+                text_in = extend_data["question"].lower()
+                # if the answer doesn't contain digits, don't generate a python expression
+                if any(char.isdigit() for char in extend_data['final_res']):
+                    text_in += " write down a short python expression."
+
                 extend_data.update({"struct_in": " ".join(extend_data['pre_text']).lower() + "\n" + linear_table.lower() + "\n" + " ".join(extend_data['post_text']).lower(),
-                                    "text_in": extend_data["question"].lower(),
-                                    "seq_out": extend_data['answer'].lower()})
+                                    "text_in": text_in,
+                                    "seq_out": extend_data['final_res'].lower()})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -101,9 +106,15 @@ class DevDataset(Dataset):
                 # linearize a table into a string
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
 
+
+                text_in = extend_data["question"].lower()
+                # if the answer doesn't contain digits, don't generate a python expression
+                if any(char.isdigit() for char in extend_data['final_res']):
+                    text_in += " write down a short python expression."
+
                 extend_data.update({"struct_in": " ".join(extend_data['pre_text']).lower() + "\n" + linear_table.lower() + "\n" + " ".join(extend_data['post_text']).lower(),
-                                    "text_in": extend_data["question"].lower(),
-                                    "seq_out": extend_data['answer'].lower()})
+                                    "text_in": text_in,
+                                    "seq_out": extend_data['final_res'].lower()})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -145,9 +156,15 @@ class TestDataset(Dataset):
                 # linearize a table into a string
                 linear_table = self.tab_processor.table_linearize_func.process_table(table_context)
 
+
+                text_in = extend_data["question"].lower()
+                # if the answer doesn't contain digits, don't generate a python expression
+                if any(char.isdigit() for char in extend_data['final_res']):
+                    text_in += " write down a short python expression."
+
                 extend_data.update({"struct_in": " ".join(extend_data['pre_text']).lower() + "\n" + linear_table.lower() + "\n" + " ".join(extend_data['post_text']).lower(),
-                                    "text_in": extend_data["question"].lower(),
-                                    "seq_out": extend_data['answer'].lower()})
+                                    "text_in": text_in,
+                                    "seq_out": extend_data['final_res'].lower()})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)

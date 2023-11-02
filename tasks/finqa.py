@@ -38,6 +38,8 @@ class FinQA(datasets.GeneratorBasedBuilder):
                 "pre_text": datasets.features.Sequence(datasets.Value("string")),
                 "question": datasets.Value("string"),
                 "answer": datasets.Value("string"),
+                "final_res": datasets.Value("string"),
+                "steps": datasets.Value("string"),
                 "gold_evidence": datasets.features.Sequence(datasets.Value("string")),
                 "table": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("string"))),
             }
@@ -81,7 +83,9 @@ class FinQA(datasets.GeneratorBasedBuilder):
                 "post_text": example['post_text'], 
                 "pre_text": example['pre_text'], 
                 "question": example['qa']['question'], 
-                "answer": example['qa']['answer'], 
+                "answer": example['qa']['answer'],
+                "steps": str(example['qa']['steps']),
+                'final_res': str(example['qa']['steps'][-1]['res']),
                 "table": example['table'], 
                 "gold_evidence": list(example['qa']['gold_inds'].values())
             }
