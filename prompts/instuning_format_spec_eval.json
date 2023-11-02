@@ -165,5 +165,10 @@
         "instruction": "Using the following table, determine if the statement is reasonable, wrong, or not necessarily either using the information in the key-value pairs.",
         "input_format": "key value pairs:\n\n<struct_in>\n\n\nstatement:\n\n<text_in>",
         "output_format": "<seq_out>"
+    },
+    "wikitabletext": {
+        "instruction": "Paraphrase the information contained in the following table into a sentence or two.",
+        "input_format": "<struct_in>",
+        "output_format": "<seq_out>"
     }
 }
