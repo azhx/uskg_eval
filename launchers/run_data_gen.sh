@@ -1,24 +1,24 @@
 #!/bin/bash
-__conda_setup="$('/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+
+__conda_setup="$('/ML-A100/home/alexzhuang/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__conda_setup"
 else
-    if [ -f "/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/miniconda3/etc/profile.d/conda.sh"
+    if [ -f "/ML-A100/home/alexzhuang/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/ML-A100/home/alexzhuang/miniconda3/etc/profile.d/conda.sh"
     else
-        export PATH="/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/miniconda3/bin:$PATH"
+        export PATH="/ML-A100/home/alexzhuang/miniconda3/bin:$PATH"
     fi
 fi
 unset __conda_setup
 
-which conda
-export HF_HOME=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/.cache/huggingface
-cd /cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/
-export WANDB_MODE=disabled
+export HF_HOME=/ML-A100/home/alexzhuang/.cache/huggingface
+cd /ML-A100/home/alexzhuang/uskg_eval/
 conda activate alex
+export WANDB_MODE=disabled
 
 python uskg_gen_dataset.py \
-    --cfg Salesforce/old/new_data_gen.cfg \
+    --cfg new_data_gen.cfg \
     --run_name inst_T5_3b_all_tasks \
     --logging_strategy steps \
     --logging_first_step true \

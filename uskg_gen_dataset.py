@@ -25,6 +25,10 @@ from tqdm import tqdm
 # in transformers==4.10.1 during our work.
 logger = logging.getLogger(__name__)
 
+# class with a getitem
+class DummyDataset():
+    def __getitem__(self, index):
+        return {}
 
 def main() -> None:
     os.environ[
@@ -36,8 +40,8 @@ def main() -> None:
     from filelock import FileLock
     import nltk
     with FileLock(".lock") as lock:
-        nltk.download("punkt", quiet=True)
-        nltk.download("stopwords", quiet=True)
+        nltk.download("punkt", quiet=False)
+        nltk.download("stopwords", quiet=False)
 
     # Get args
     parser = HfArgumentParser((WrappedSeq2SeqTrainingArguments,))
@@ -67,11 +71,15 @@ def main() -> None:
             task_args = Configure.Get(arg_path)
             task_args.bert = args.bert
             print('task_args.bert.location:', task_args.bert.location)
-            task_raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(
-                path=task_args.dataset.loader_path,
-                cache_dir=task_args.dataset.data_store_path)
+            splits = [f for f in os.listdir(cache_root) if f.startswith(task)]
+            if len(splits) == 3:
+                placeholder = {'train':DummyDataset(), 'validation':DummyDataset(), 'test':DummyDataset()}
+            else:
+                placeholder = {'train':DummyDataset(), 'validation':DummyDataset()}
+
+            # note, must have a cache at this point
             task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
-                to_seq2seq(task_raw_datasets_split, cache_root)
+                to_seq2seq(placeholder, cache_root)
 
             meta_tuning_data[arg_path] = task_seq2seq_dataset_split
 
@@ -80,7 +88,7 @@ def main() -> None:
     # save it all into one pickle file
     import pickle
     if training_args.do_train:
-        with open(os.path.join("./skg_dataset_v11.pkl"), "wb") as f:
+        with open(os.path.join("./tmp/skg_dataset_v11_full.pkl"), "wb") as f:
             pickle.dump(seq2seq_dataset_split, f)
 
 if __name__ == "__main__":
