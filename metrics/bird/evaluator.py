@@ -2,6 +2,7 @@
 import os
 from .bird_evaluation import run_sqls_parallel, sort_results, compute_acc_by_diff, print_data, run
 import multiprocessing as mp
+import glob
 
 
 
@@ -10,8 +11,11 @@ class EvaluateTool(object):
         self.args = args
 
     def evaluate(self, preds, golds, section):
+        matching_paths = glob.glob("data/downloads/extracted/*/dev_databases")
+        assert len(matching_paths) == 1
+        db_base_path = matching_paths[0]
         gt_queries = [item['query'] for item in golds]
-        db_paths = [item['db_path'] for item in golds]
+        db_paths = [os.path.join(db_base_path, item['db_id'], item['db_id'] + ".sqlite") for item in golds]
         query_pairs = list(zip(preds, gt_queries))
         exec_result = run(query_pairs, db_paths, num_cpus=4, meta_time_out=30.0)
         exec_result = sort_results(exec_result)

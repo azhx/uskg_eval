@@ -1,3 +1,11 @@
+'''
+Author: ygjin11 1633504509@qq.com
+Date: 2024-01-09 04:16:22
+LastEditors: ygjin11 1633504509@qq.com
+LastEditTime: 2024-02-14 09:51:20
+FilePath: /uskg_eval/tasks/finqa.py
+Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+'''
 # Copyright 2020 The HuggingFace Datasets Authors and the current dataset script contributor.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +48,7 @@ class FinQA(datasets.GeneratorBasedBuilder):
                 "answer": datasets.Value("string"),
                 "final_res": datasets.Value("string"),
                 "steps": datasets.Value("string"),
+                "program": datasets.Value("string"),
                 "gold_evidence": datasets.features.Sequence(datasets.Value("string")),
                 "table": datasets.features.Sequence(datasets.features.Sequence(datasets.Value("string"))),
             }
@@ -82,9 +91,10 @@ class FinQA(datasets.GeneratorBasedBuilder):
                 "id": example['id'], 
                 "post_text": example['post_text'], 
                 "pre_text": example['pre_text'], 
-                "question": example['qa']['question'], 
+                "question": example['qa']['question'], ``
                 "answer": example['qa']['answer'],
                 "steps": str(example['qa']['steps']),
+                "program": str(example['qa']['program']),
                 'final_res': str(example['qa']['steps'][-1]['res']),
                 "table": example['table'], 
                 "gold_evidence": list(example['qa']['gold_inds'].values())

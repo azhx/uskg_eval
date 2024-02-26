@@ -33,27 +33,8 @@ import utils
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
-DEFAULT_UNK_TOKEN = "</s>"
-PROMPT_DICT = {
-    "prompt_input": (
-        "Below is an instruction that describes a task, paired with an input that provides further context. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
-    ),
-    # "prompt_input": (
-    #     "[INST] {instruction}\n\n[INPUT] {input} [/INST] "
-    # ),
-    "prompt_no_input": (
-        "Below is an instruction that describes a task. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Response:\n"
-    ),
-    "prompt_no_instruction": (
-        "### Input:\n{input}\n\n### Response:\n"
-    )
-}
-
+DEFAULT_BOS_TOKEN = "<s>"
+DEFAULT_UNK_TOKEN = "<unk>"
 
 @dataclass
 class ModelArguments:
@@ -65,9 +46,6 @@ class DataArguments:
     data_path: str = field(default=None, metadata={"help": "Path to the training data."})
     pkl_path: str = field(default="data_v4_input_ids_labels.pkl", 
                           metadata={"help": "Path to the pickled version of tokenized data. Loading from this is faster. Must be in same directory as data_path"})
-    has_instruction: bool = field(default=True, metadata={"help": "Whether we should use instructions for this dataset."})
-    dataset_type: str = field(default="llama", metadata={"help": "Type of dataset. [llama, skg]"})
-
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
@@ -76,6 +54,10 @@ class TrainingArguments(transformers.TrainingArguments):
     model_max_length: int = field(
         default=512,
         metadata={"help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."},
+    )
+    use_flash_attn_2: bool = field(
+        default=False,
+        metadata={"help": "Whether to use flash attn 2"}   
     )
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
@@ -148,6 +130,30 @@ def preprocess(
     return dict(input_ids=input_ids, labels=labels)
 
 
+def preprocess_fixed(
+    sources: Sequence[str],
+    targets: Sequence[str],
+    tokenizer: transformers.PreTrainedTokenizer,
+) -> Dict:
+    """Preprocess the data by tokenizing."""
+    input_ids, labels = [], []
+    for s, t in zip(sources, targets):
+        assert len(t) > 0, f"Empty target for source: {s}"
+        tokenized_txt = tokenizer(
+            s + t,
+            return_tensors="pt",
+            padding="longest",
+            max_length=tokenizer.model_max_length,
+            truncation=True,
+        )
+        # This line helps us avoid scenarios where s + t != tok(s) + tok(t)
+        post_source = tokenized_txt.char_to_token(len(s))
+        input_ids.append(tokenized_txt['input_ids'][0])
+        label = copy.deepcopy(tokenized_txt['input_ids'][0])
+        label[:post_source] = IGNORE_INDEX
+        labels.append(label)
+    return dict(input_ids=input_ids, labels=labels)
+
 @dataclass
 class DataCollatorForSupervisedDataset(object):
     """Collate examples for supervised fine-tuning."""
@@ -168,25 +174,9 @@ class DataCollatorForSupervisedDataset(object):
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
-def train_tokenize_function(examples, tokenizer):
-    prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
-    if 'input' in examples:
-        sources = [
-            prompt_input.format_map(dict(instruction=instruction, input=input)) if input != "" \
-            else prompt_no_input.format_map(dict(instruction=instruction)) \
-            for instruction, input in zip(examples['instruction'], examples['input']) 
-        ]
-    else:
-        sources = [
-            prompt_no_input.format_map(dict(instruction=instruction)) \
-            for instruction in examples['instruction']
-        ]
-    targets = [f"{output}{tokenizer.eos_token}" for output in examples['output']]
-    data_dict = preprocess(sources, targets, tokenizer)
-    return data_dict
-
 def formatted_train_tokenize_function(examples, tokenizer):
-    data_dict = preprocess(examples['formatted_input'], examples['output'], tokenizer)
+    targets = [f"{output}{tokenizer.eos_token}" for output in examples['seq_out']]
+    data_dict = preprocess_fixed(examples['formatted_input'], targets, tokenizer)     
     return data_dict
               
 def train():
@@ -195,7 +185,9 @@ def train():
         
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
+        torch_dtype=torch.bfloat16,
         cache_dir=training_args.cache_dir,
+        use_flash_attention_2 = training_args.use_flash_attn_2
     )
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -204,7 +196,6 @@ def train():
         model_max_length=training_args.model_max_length,
         padding_side="right",
         use_fast=True,
-        add_eos_token=True,
     )
     if tokenizer.pad_token is None:
         smart_tokenizer_and_embedding_resize(
@@ -212,16 +203,16 @@ def train():
             tokenizer=tokenizer,
             model=model,
         )
-    if "llama" in model_args.model_name_or_path:
-        tokenizer.add_special_tokens(
-            {
-                "eos_token": DEFAULT_EOS_TOKEN,
-                "bos_token": DEFAULT_BOS_TOKEN,
-                "unk_token": DEFAULT_UNK_TOKEN,
-            }
-        )
-    data_path_dir = os.path.dirname(data_args.data_path)
-    full_pkl_path = os.path.join(data_path_dir, data_args.pkl_path)
+    # IMPORTANT NOTE: Do this for models in the llama family.
+    tokenizer.add_special_tokens(
+        {
+            "eos_token": DEFAULT_EOS_TOKEN,
+            "bos_token": DEFAULT_BOS_TOKEN,
+            "unk_token": DEFAULT_UNK_TOKEN,
+        }
+    )
+    base_path = os.path.dirname(os.path.dirname(data_args.data_path))
+    full_pkl_path = os.path.join(base_path, data_args.pkl_path)
     # if there is already a tokenized data file, then just load that
     if os.path.exists(full_pkl_path):
         logging.warning("Found tokenized data file, loading...")
@@ -229,10 +220,20 @@ def train():
             train_dataset = pickle.load(f)
             #train_dataset.set_format(type="pt")
     else:
-        raw_train_datasets = load_dataset('json', data_files=data_args.data_path, split="train", cache_dir=training_args.cache_dir)
-        if training_args.local_rank > 0: 
+        if training_args.local_rank > 0 or (torch.distributed.is_initialized() and torch.distributed.get_rank() > 0):
             torch.distributed.barrier()
+        raw_train_datasets = load_dataset('json', data_files=data_args.data_path, split="train", cache_dir=training_args.cache_dir)
 
+        # batch in 3000 examples
+        # try:
+        # exampleslst = [each for each in raw_train_datasets]
+        # batches = [exampleslst[i:i + 3000] for i in range(0, len(exampleslst), 3000)]
+        # train_dataset = []
+        # for batch in tqdm(batches):
+        #         import pdb; pdb.set_trace()
+        #         train_dataset.extend(formatted_train_tokenize_function(batch, tokenizer))
+        # # except:
+        # #     import pdb; pdb.post_mortem()
         train_dataset = raw_train_datasets.map(
             formatted_train_tokenize_function,
             batched=True,
@@ -251,9 +252,9 @@ def train():
 
         #train_dataset.set_format(type="pt")
 
-        if training_args.local_rank == 0:
+        if training_args.local_rank == 0 and (torch.distributed.is_initialized() and torch.distributed.get_rank() == 0):
             torch.distributed.barrier()
-        
+    
     if training_args.local_rank == 0:
         print(len(train_dataset))
         for index in random.sample(range(len(train_dataset)), 3):
@@ -269,6 +270,7 @@ def train():
     trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     model.config.use_cache = False
 
+    # trainer.predict(train_dataset)
     trainer.train()
     trainer.save_state()
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)

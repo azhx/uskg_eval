@@ -133,3 +133,6 @@ Temporary Items
 
 # PyCharm
 **/.idea/**/*
+
+*/.csv
+

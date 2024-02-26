@@ -34,7 +34,7 @@ unset __conda_setup
 which conda
 export HF_HOME=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/.cache/huggingface
 cd /cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/Llama-X/src
-conda activate alex
+conda activate SKGLM
 
 export WANDB_DISABLED=True
 

@@ -14,7 +14,7 @@ unset __conda_setup
 which conda
 export HF_HOME=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/.cache/huggingface
 cd /cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/
-conda activate alex
+conda activate SKGLM
 
 ./run_t5_single_eval.sh t5_large_baseline bird 1235 
 ./run_t5_single_eval.sh t5_large_baseline infotabs 1235 

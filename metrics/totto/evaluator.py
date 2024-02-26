@@ -15,7 +15,7 @@ def postprocess_text(preds, references_s, metric_name):
         for ref in references_s:
             for _ in range(ref_max_len - len(ref)):
                 ref.append(None)  # see https://github.com/mjpost/sacrebleu/pull/132
-                print(ref)
+                # print(ref)
     elif metric_name == "bleu":
         preds = [pred.split(' ') for pred in preds]
         references_s = [[reference.split(' ') for reference in references] for references in references_s]
@@ -39,7 +39,7 @@ class EvaluateTool(object):
         if section in ['train', 'dev']:
             metric_list = ['sacrebleu']
         elif section == 'test':
-            metric_list = ["sacrebleu", "bleurt"]  # TODO: add PARENT
+            metric_list = ["sacrebleu"]#, "bleurt"]  # TODO: add PARENT
 
         for metric_name in metric_list:
             metric = load_metric(metric_name)

@@ -40,14 +40,13 @@ class EvaluateTool(object):
         if section in ['train', 'dev']:
             metric_list = ["sacrebleu"]
         elif section == 'test':
-            metric_list = ["sacrebleu", "metrics/dart/meteor.py", "metrics/dart/ter.py",
+            metric_list = ["sacrebleu"] #, "metrics/dart/meteor.py", "metrics/dart/ter.py", "bertscore", "bleurt"]
                            # Huggingface has their implementation in Nov 2021:
                            # ter https://github.com/huggingface/datasets/tree/master/metrics/ter,
                            # it is equal in function to ours.
                            # "metrics/dart/moverscore.py"
                            # we didn't use moverscore since it strictly depends on hf==3.1.0
                            # which conflicts our repo dependency.
-                           "bertscore", "bleurt"]
 
         # TODO: Adopt PARENT metric from ToTTo.
         for metric_name in metric_list:

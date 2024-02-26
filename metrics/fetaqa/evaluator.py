@@ -37,8 +37,7 @@ class EvaluateTool(object):
         if section in ['train', 'dev']:
             metric_list = ['sacrebleu']
         elif section == 'test':
-            metric_list = ["sacrebleu", "rouge", "meteor", "bertscore", "bleurt"]
-
+            metric_list = ["sacrebleu"] # "rouge", "meteor", "bertscore", "bleurt"]
         for metric_name in metric_list:
             metric = load_metric(metric_name)
             processed_preds, processed_golds = postprocess_text(preds, gold_text, metric_name)

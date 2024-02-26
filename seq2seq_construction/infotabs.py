@@ -65,7 +65,7 @@ class TrainDataset(Dataset):
 
                 extend_data.update({"struct_in": kvp,
                                     "text_in": statement,
-                                    "seq_out": extend_data['label']})
+                                    "seq_out": extend_data['natural_label']})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -102,7 +102,7 @@ class DevDataset(Dataset):
 
                 extend_data.update({"struct_in": kvp,
                                     "text_in": statement,
-                                    "seq_out": extend_data['label']})
+                                    "seq_out": extend_data['natural_label']})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)
@@ -138,7 +138,7 @@ class TestDataset(Dataset):
 
                 extend_data.update({"struct_in": kvp,
                                     "text_in": statement,
-                                    "seq_out": extend_data['label']})
+                                    "seq_out": extend_data['natural_label']})
                 self.extended_data.append(extend_data)
             if args.dataset.use_cache:
                 torch.save(self.extended_data, cache_path)

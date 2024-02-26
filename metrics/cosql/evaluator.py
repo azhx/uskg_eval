@@ -3,6 +3,7 @@
 from metrics.spider.spider_exact_match import compute_exact_match_metric
 from metrics.spider.spider_test_suite import compute_test_suite_metric
 from metrics.sparc.interaction_scores import compute_interaction_metric
+import glob
 
 class EvaluateTool(object):
     def __init__(self, args):
@@ -12,6 +13,10 @@ class EvaluateTool(object):
         # if self.args.seq2seq.target_with_db_id:
         #     # Remove database id from all predictions
         #     preds = [pred.split("|", 1)[-1].strip() for pred in preds]
+        matching_paths = glob.glob("data/downloads/extracted/*/sparc/database")
+        assert len(matching_paths) == 1
+        db_dir = matching_paths[0]
+        golds[0]['db_path'] = db_dir
 
         # fix bugs in the gold dataset.
         for i, each in enumerate(golds):

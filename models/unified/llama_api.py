@@ -17,17 +17,17 @@ class Model(nn.Module):
         self.tokenizer.paddding_side = "left"
 
         # post a request to the port to verify its the model that we want
-        res = requests.post(
-            f"{self.args.llama.url}/verify_model",
-            json={
-                "model_path": self.args.llama.model_path
-            }
-        ).json()
+        # res = requests.post(
+        #     f"{self.args.llama.url}/verify_model",
+        #     json={
+        #         "model_path": self.args.llama.model_path
+        #     }
+        # ).json()
     
-        if not res['verified']:
-            raise ValueError("Model path does not match the model path on the llama server")
-        else:
-            print(f"Model path verified to be {self.args.llama.model_path}")
+        # if not res['verified']:
+        #     raise ValueError("Model path does not match the model path on the llama server")
+        # else:
+        #     print(f"Model path verified to be {self.args.llama.model_path}")
 
     def forward(self, input_ids, attention_mask, labels):
         return {'loss': 0} # we don't need to compute loss for this model

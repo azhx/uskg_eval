@@ -55,3 +55,14 @@ class WrappedSeq2SeqTrainingArguments(Seq2SeqTrainingArguments):
         default="cache", metadata={
             "help": "The directory of the dataset caches."}
     )
+    vllm: Optional[bool] = field(
+        default = False, metadata={
+            "help": "Whether to use VLLM. (Hack)"}
+    )
+        
+    @property 
+    def place_model_on_device(self):
+        """
+        Can be subclassed and overridden for some specific integrations.
+        """
+        return not self.vllm

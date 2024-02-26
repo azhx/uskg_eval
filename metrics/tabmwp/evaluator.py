@@ -14,7 +14,9 @@ class EvaluateTool(object):
         for pred, gold_item in zip(preds, golds): 
             output = pred
 
-            options = eval(gold_item['choices'])
+            options = None
+            if gold_item['choices']:
+                options = eval(gold_item['choices'])
 
             # extract theprediction answer
             prediction = extract_prediction(output, options)

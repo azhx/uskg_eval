@@ -2,6 +2,7 @@
 import json
 
 from .multiwoz_metrics import evaluate_metrics, get_slot_information
+import glob
 
 """
 {
@@ -63,6 +64,9 @@ class EvaluateTool(object):
 
     def evaluate(self, preds, golds, section):
         summary = {}
+
+        matching_paths = glob.glob("data/downloads/extracted/*/processed_data/ontology.json")
+        golds[0]['ontology_path'] = matching_paths[0]
 
         ontology_path = golds[0]['ontology_path']
         ontology = json.load(open(ontology_path, 'r'))

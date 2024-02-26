@@ -33,7 +33,7 @@ import utils
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
+DEFAULT_BOS_TOKEN = "<s>"
 DEFAULT_UNK_TOKEN = "</s>"
 PROMPT_DICT = {
     "prompt_input": (
@@ -140,7 +140,7 @@ def skg_preprocess_and_tokenize(example, format_str, tokenizer):
         pre_truncation = format_str.format(struct_in=example['struct_in']) + example["output"]
 
     # get the char index of when the struct starts and ends
-    struct_start = pre_truncation.find(example['struct_in']) 
+    struct_start = pre_truncation.find(example['struct_in'])
     struct_end = struct_start + len(example['struct_in'])
     output_start = pre_truncation.find(example['output'])
 
@@ -284,8 +284,8 @@ def train():
                 "unk_token": DEFAULT_UNK_TOKEN,
             }
         )
-    data_path_dir = os.path.dirname(data_args.data_path)
-    full_pkl_path = os.path.join(data_path_dir, data_args.pkl_path)
+    base_path = os.path.dirname(os.path.dirname(data_args.data_path))
+    full_pkl_path = os.path.join(base_path, data_args.pkl_path)
     # if there is already a tokenized data file, then just load that
     if os.path.exists(full_pkl_path):
         logging.warning("Found tokenized data file, loading...")

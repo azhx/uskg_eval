@@ -36,13 +36,6 @@ def main() -> None:
     torch.use_deterministic_algorithms(True)
     # Initialize the logger
     logging.basicConfig(level=logging.INFO)
-
-    from filelock import FileLock
-    import nltk
-    with FileLock(".lock") as lock:
-        nltk.download("punkt", quiet=False)
-        nltk.download("stopwords", quiet=False)
-
     # Get args
     parser = HfArgumentParser((WrappedSeq2SeqTrainingArguments,))
     training_args, = parser.parse_args_into_dataclasses()
@@ -56,22 +49,25 @@ def main() -> None:
     
     # check if train, eval, test already exist
     print("starting datset construction")
-    if not args.arg_paths:
-        cache_root = os.path.join('output', 'cache')
-        os.makedirs(cache_root, exist_ok=True)
-        raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=args.dataset.loader_path,
-                                                                        cache_dir=args.dataset.data_store_path)
-        seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).to_seq2seq(
-            raw_datasets_split, cache_root)
-    else:
-        cache_root = os.path.join('output', 'cache')
-        os.makedirs(cache_root, exist_ok=True)
-        meta_tuning_data = {}
-        for task, arg_path in tqdm(args.arg_paths):
+    cache_root = os.path.join('output', 'cache')
+    os.makedirs(cache_root, exist_ok=True)
+    meta_tuning_data = {}
+    for task, arg_path in tqdm(args.arg_paths):
+        splits = [f for f in os.listdir(cache_root) if f.startswith(task)]
+        if len(splits) == 0:
+            print(f"cache not found for {task}")
+            # the cache is not found, try to construct it
+            task_args = Configure.Get(arg_path)
+            task_args.bert = args.bert
+            raw_datasets_split: datasets.DatasetDict = datasets.load_dataset(path=task_args.dataset.loader_path,
+                                                                    cache_dir=task_args.dataset.data_store_path)
+            task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).to_seq2seq(
+                raw_datasets_split, cache_root)
+        else:
+            print(f"cache found for {task}")
             task_args = Configure.Get(arg_path)
             task_args.bert = args.bert
             print('task_args.bert.location:', task_args.bert.location)
-            splits = [f for f in os.listdir(cache_root) if f.startswith(task)]
             if len(splits) == 3:
                 placeholder = {'train':DummyDataset(), 'validation':DummyDataset(), 'test':DummyDataset()}
             else:
@@ -81,14 +77,14 @@ def main() -> None:
             task_seq2seq_dataset_split: tuple = utils.tool.get_constructor(task_args.seq2seq.constructor)(task_args).\
                 to_seq2seq(placeholder, cache_root)
 
-            meta_tuning_data[arg_path] = task_seq2seq_dataset_split
+        meta_tuning_data[arg_path] = task_seq2seq_dataset_split
 
-        seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
-            to_seq2seq(meta_tuning_data)
+    seq2seq_dataset_split: tuple = utils.tool.get_constructor(args.seq2seq.constructor)(args).\
+        to_seq2seq(meta_tuning_data)
     # save it all into one pickle file
     import pickle
     if training_args.do_train:
-        with open(os.path.join("./tmp/skg_dataset_v11_full.pkl"), "wb") as f:
+        with open(os.path.join("./tmp/skg_dataset_v12_full.pkl"), "wb") as f:
             pickle.dump(seq2seq_dataset_split, f)
 
 if __name__ == "__main__":

@@ -1,21 +1,23 @@
 #!/bin/bash
 
-__conda_setup="$('/ML-A100/home/alexzhuang/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+__conda_setup="$('/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__conda_setup"
 else
-    if [ -f "/ML-A100/home/alexzhuang/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/ML-A100/home/alexzhuang/miniconda3/etc/profile.d/conda.sh"
+    if [ -f "/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/miniconda3/etc/profile.d/conda.sh"
     else
-        export PATH="/ML-A100/home/alexzhuang/miniconda3/bin:$PATH"
+        export PATH="/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/miniconda3/bin:$PATH"
     fi
 fi
 unset __conda_setup
 
-export HF_HOME=/ML-A100/home/alexzhuang/.cache/huggingface
-cd /ML-A100/home/alexzhuang/uskg_eval/
-conda activate alex
+export HF_HOME=/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/.cache/huggingface
+cd /ML-A100/team/mm/zhangge/gezhangmv/SKGLM/uskg_eval/
+conda activate SKGLM
 export WANDB_MODE=disabled
+
+export NLTK_DATA=/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/nltk_data
 
 python uskg_gen_dataset.py \
     --cfg new_data_gen.cfg \
@@ -37,9 +39,9 @@ python uskg_gen_dataset.py \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 16 \
     --generation_num_beams 4 \
-    --generation_max_length 256 \
+    --generation_max_length 512 \
     --report_to "tensorboard" \
-    --input_max_length 1024 \
+    --input_max_length 2048 \
     --ddp_find_unused_parameters true \
     --gradient_checkpointing true
     # --do_eval \

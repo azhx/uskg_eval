@@ -3,6 +3,7 @@ from collections import OrderedDict
 import json
 import nltk
 from datasets import load_metric
+import glob
 
 
 def load_entities(kvret_entity_file_path):
@@ -70,6 +71,8 @@ class EvaluateTool(object):
 
     def evaluate(self, preds, golds, section):
         summary = {}
+        matching_paths = glob.glob("./data/downloads/extracted/*/kvret_entities.json")
+        golds[0]["entities_file"] = matching_paths[0]
 
         assert len(golds) > 0
         global_entities = load_entities(golds[0]["entities_file"])

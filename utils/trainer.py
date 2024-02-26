@@ -31,6 +31,7 @@ if version.parse(torch.__version__) >= version.parse("1.6"):
     _is_native_amp_available = True
     from torch.cuda.amp import autocast
 
+from vllm import SamplingParams
 
 class EvalPrediction(NamedTuple):
     predictions: List[str]
@@ -329,7 +330,7 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
     def _post_process_function(
             self, examples: Dataset, predictions: np.ndarray, stage: str
     ) -> EvalPrediction:
-        assert isinstance(examples, Dataset)
+        # assert isinstance(examples, Dataset)
 
         try:
             predictions = self.tokenizer.batch_decode(predictions, skip_special_tokens=True)
@@ -337,7 +338,7 @@ class EvaluateFriendlySeq2SeqTrainer(transformers.trainer_seq2seq.Seq2SeqTrainer
             import pickle
             with open(f"{self.args.output_dir}/preds.pkl", "wb") as f:
                 pickle.dump(predictions, f)
-
+            pickle.dump(examples, open(f"{self.args.output_dir}/preds_examples.pkl", "wb"))
         # Save locally.
         if self.args.local_rank <= 0:
             with open(f"{self.args.output_dir}/predictions_{stage}.json", "w") as f:
@@ -391,26 +392,23 @@ class LlamaSeq2SeqTrainer(EvaluateFriendlySeq2SeqTrainer):
             Tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]: A tuple with the loss, logits and
             labels (each being optional).
         """
-        inputs = self._prepare_inputs(inputs)
-
+        # inputs = self._prepare_inputs(inputs)
         # XXX: adapt synced_gpus for fairscale as well
-        gen_kwargs = {
-            "max_new_tokens": self.args.generation_max_length,
-        }
-        generated_tokens = self.model.generate(
-            inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            **gen_kwargs,
-        )
 
+        # need to convert tensor back to list
+        generated_tokens = self.model.generate(inputs, self.args.generation_max_length)
+        # dont put on GPU, because we don't need to pass things through the model after this point, and its just extra overhead
+        
+        
         # in case the batch is shorter than max length, the output should be padded
-        if generated_tokens.shape[-1] < gen_kwargs["max_new_tokens"]:
-            generated_tokens = self._pad_tensors_to_max_len(generated_tokens, gen_kwargs["max_new_tokens"])
+        if generated_tokens.shape[-1] < self.args.generation_max_length:
+            generated_tokens = self._pad_tensors_to_max_len(generated_tokens, self.args.generation_max_length)
 
         loss = torch.tensor([0]).cuda() # we will never train Llama through this API.
 
         labels = inputs["labels"]
-        if labels.shape[-1] < gen_kwargs["max_new_tokens"]:
-            labels = self._pad_tensors_to_max_len(labels, gen_kwargs["max_new_tokens"])
+        if labels.shape[-1] < self.args.generation_max_length:
+            labels = self._pad_tensors_to_max_len(labels, self.args.generation_max_length)
+
         return (loss, generated_tokens, labels)
 

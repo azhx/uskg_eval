@@ -1,29 +1,11 @@
 export CUDA_VISIBLE_DEVICES=0
 export WANDB_MODE=disabled
 
-kwargs=" --logging_strategy steps \
---logging_first_step true \
---logging_steps 4 \
---evaluation_strategy steps \
---eval_steps 500 \
---metric_for_best_model avr \
---greater_is_better true \
---save_strategy steps \
---save_steps 500 \
---save_total_limit 1 \
---load_best_model_at_end \
---gradient_accumulation_steps 8 \
---num_train_epochs 400 \
---adafactor true \
---learning_rate 5e-5 \
---do_predict \
---predict_with_generate \
+kwargs=" 
 --overwrite_output_dir \
---per_device_train_batch_size 4 \
 --per_device_eval_batch_size 1 \
---generation_num_beams 4 \
---generation_max_length 512 \
---input_max_length 4096 \
+--generation_max_length 256 \
+--input_max_length 2048 \
 --ddp_find_unused_parameters true \
 "
 
@@ -46,4 +28,4 @@ echo ""
 #     exit 0
 # fi
 
-torchrun --nproc_per_node 1 --master_port=$MASTER_PORT eval_llama_stripped.py $kwargs --run_name ${CFG_PREFIX}_${DATASET_NAME} --output_dir output/${CFG_PREFIX}_${DATASET_NAME} --cfg Salesforce/${CFG_PREFIX}_${DATASET_NAME}.cfg --port $LLAMA_PORT
+torchrun --nproc_per_node 1 --master_port=$MASTER_PORT eval_llama_stripped.py $kwargs --run_name ${CFG_PREFIX}_${DATASET_NAME} --test_split_json processed_data/llama_data_v11_kg_upated_test.json --output_dir output/${CFG_PREFIX}_${DATASET_NAME} --cfg Salesforce/${CFG_PREFIX}_${DATASET_NAME}.cfg --port $LLAMA_PORT

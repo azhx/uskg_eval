@@ -19,23 +19,29 @@ export WANDB_DISABLED=True
 # DATA_PATH=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/llama_data_v6_upsampled_rcs.json
 # OUTPUT_DIR=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/models/llama/v6_rcs
 
-#MODEL_DIR=/cpfs/29cd2992fe666f2a/shared/public/hub/models--codellama--CodeLlama-13b-Instruct-hf/snapshots/ff0983bc4267bb98ead4fb5168fe2f049b442787
-MODEL_DIR=/cpfs/29cd2992fe666f2a/shared/public/hub/models--codellama--CodeLlama-7b-Instruct-hf/snapshots/6114dd1e16f69e0765ccbd7a64d33d04b265fbd2/
-#MODEL_DIR=/h/wenhuchen/STORAGE/alex/codellama_finetune/checkpoint-25630
-DATA_PATH=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/llama_data_v10_nommqa.json
-OUTPUT_DIR=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/models/llama/v7_nu_prompt_fixed
+# #MODEL_DIR=/cpfs/29cd2992fe666f2a/shared/public/hub/models--codellama--CodeLlama-13b-Instruct-hf/snapshots/ff0983bc4267bb98ead4fb5168fe2f049b442787
+# MODEL_DIR=/cpfs/29cd2992fe666f2a/shared/public/hub/models--codellama--CodeLlama-7b-Instruct-hf/snapshots/6114dd1e16f69e0765ccbd7a64d33d04b265fbd2/
+# #MODEL_DIR=/h/wenhuchen/STORAGE/alex/codellama_finetune/checkpoint-25630
+# DATA_PATH=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/llama_data_v10_nommqa.json
+# OUTPUT_DIR=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/models/llama/v7_nu_prompt_fixed
 
+# /ML-A100/home/gezhang/models/llama2-7B-hf
+# /ML-A100/home/gezhang/models/CodeLlama-7b-hf
+#MODEL_DIR=/cpfs/29cd2992fe666f2a/shared/public/hub/models--codellama--CodeLlama-13b-Instruct-hf/snapshots/ff0983bc4267bb98ead4fb5168fe2f049b442787
+MODEL_DIR=/ML-A100/home/gezhang/models/llama2-7B-hf
+#qMODEL_DIR=/ML-A100/home/gezhang/models/CodeLlama-7b-hf
+#MODEL_DIR=/h/wenhuchen/STORAGE/alex/codellama_finetune/checkpoint-25630
+DATA_PATH=/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/uskg_eval/raw_data/llama_data_v11_kg.json
+OUTPUT_DIR=/ML-A100/team/mm/zhangge/gezhangmv/SKGLM/uskg_eval/models/ckpts/v11_llama2_base
 
 
 #LAUNCHER="python"
 LAUNCHER="deepspeed"
-SCRIPT="train.py"
+SCRIPT="train_on_formatted.py"
 SCRIPT_ARGS=(--model_name_or_path ${MODEL_DIR} \
     --data_path "${DATA_PATH}" \
     --output_dir ${OUTPUT_DIR} \
-    --pkl_path "cl_2048_nommqa_noinst.pkl" \
-    --has_instruction False \
-    --dataset_type="skg" \
+    --pkl_path "tmp/v11_llama2_base.pkl" \
     --num_train_epochs 3 \
     --model_max_length 2048 \
     --per_device_train_batch_size 16 \

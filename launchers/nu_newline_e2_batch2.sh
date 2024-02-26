@@ -14,7 +14,7 @@ unset __conda_setup
 which conda
 export HF_HOME=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/.cache/huggingface
 cd /cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/
-conda activate alex
+conda activate SKGLM
 
 
 nohup python llama_service.py --model_path="/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/models/llama/v9_nu_newline/checkpoint-4724" --port=8203 &>/dev/null &

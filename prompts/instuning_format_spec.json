@@ -14,11 +14,6 @@
         "input_format": "knowledge graph triples:\n\n{struct_in}\n\n\nquestion:\n\n{text_in}",
         "output_format": "<seq_out>"
     },
-    "cosql": {
-        "instruction": ["<held out>"],
-        "input_format": "<held out>",
-        "output_format": "<held out>"
-    },
     "dart": {
         "instruction": ["Given a list of entity-relation triples, turn the triples into a natural language sentence.",
                         "Given some entity-relation triples, convert them into a natural language sentence.",
@@ -119,15 +114,15 @@
     },
     "mmqa": {
         "instruction": ["Given the following context (either a passage or a data table), answer the following question.",
-                        "Using the following data table or passage, answer the following question.",
-                        "You will be given a data table. Answer the following question using the information it contains.",
-                        "Answer the following question using the information in the data table.",
-                        "Your task is to answer the following question using the information in the data table or passage.",
-                        "Answer the following question using the data table or passage below.",
-                        "Infer the correct response to the following question using the information in the data table or passage.",
-                        "Use the given data table or passage to infer the answer to the following question.",
-                        "Using the structured knowledge from the data table or passage, infer the answer to the following question.",
-                        "Use the given data table or passage to help you answer the following question."],
+                        "Using the following context, either data table or passage, answer the following question.",
+                        "You will be given a table or a passage as context. Answer the following question using the information it contains.",
+                        "Answer the following question using the information in the passage or data table context.",
+                        "Your task is to answer the following question using the information in the context of the data table or passage.",
+                        "Answer the following question using the context data table or passage below.",
+                        "Infer the correct response to the following question using the contextual information in the data table or passage.",
+                        "Use the given data table or passage context to infer the answer to the following question.",
+                        "Using the structured knowledge in the context of the data table or passage, infer the answer to the following question.",
+                        "Use the context (data table or passage) to help you answer the following question."],
         "input_format": "context:\n\n{struct_in}\n\n\nquestion:\n\n{text_in}",
         "output_format": "<seq_out>"
     },
@@ -186,11 +181,6 @@
                         "Give the simplest SQL query that would correctly answer the following question using the following database schema."],
         "input_format": "database schema:\n\n{struct_in}\n\n\nquestion:\n\n{text_in}",
         "output_format": "<seq_out>"
-    },
-    "sqa": {
-        "instruction": ["<held out>"],
-        "input_format": "<held out>",
-        "output_format": "<held out>"
     },
     "sql2text": {
         "instruction": ["Given the following SQL query, convert it to a natural language sentence.",
@@ -275,11 +265,6 @@
                         "Judge the correct answer to the question based on the data in the following table"],
         "input_format": "table:\n\n{struct_in}\n\n\nquestion:\n\n{text_in}",
         "output_format": "<seq_out>"
-    },
-    "bird": {
-        "instruction": ["<held out>"],
-        "input_format": "<held out>",
-        "output_format": "<held out>"
     },
     "tabmwp":{
         "instruction": ["Use the information in the following table to reason about the answer to the question",

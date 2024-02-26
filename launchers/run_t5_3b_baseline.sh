@@ -15,7 +15,7 @@ which conda
 export HF_HOME=/cpfs/29cd2992fe666f2a/user/huangwenhao/alex/.cache/huggingface
 cd /cpfs/29cd2992fe666f2a/user/huangwenhao/alex/uskg_eval/
 export WANDB_MODE=disabled
-conda activate alex
+conda activate SKGLM
 
 deepspeed train.py \
     --deepspeed deepspeed/ds_config_zero2.json \

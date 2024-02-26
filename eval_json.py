@@ -4,15 +4,23 @@ import os
 import json
 from utils.configue import Configure
 
+def eval_loose_json(args):
+    cfgargs = Configure.Get('')
+    evaluator = importlib.import_module("metrics.meta_tuning.evaluator").EvaluateTool(cfgargs)
+    with open(args.json_file, "rb") as f:
+        data = json.load(f)
+    preds = [item['prediction'] for item in data]
+    labs = data
+    summary = evaluator.evaluate(preds, labs, "test")
+    print(summary)
+
 def main(args):
     # use import lib to import EvaluateTool from metrics.{args.dataset_name}.evaluator
-    output_path= f"./output/{args.run_name}_{args.dataset_name}"
+    output_path= f"./output/{args.run_name}"
     predictions_path = os.path.join(output_path,"predictions_predict.json")
-    config_path = f"Salesforce/non_upsampled_{args.dataset_name}.cfg"
-    run_args = Configure.Get(config_path)
-    meta_tuning_path = getattr(run_args.arg_paths, args.dataset_name)
-    meta_args = Configure.Get(meta_tuning_path)
-    evaluator = importlib.import_module(meta_args.evaluate.tool).EvaluateTool(run_args)
+    config_path = f"{args.run_name}/{args.run_name}.cfg"
+    args = Configure.Get(config_path)
+    evaluator = importlib.import_module("metrics.meta_tuning.evaluator").EvaluateTool(args)
 
 
     with open(predictions_path, "rb") as f:
@@ -27,7 +35,10 @@ def main(args):
 if __name__=="__main__":
     # args: name of the data, name of the run, 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="wikisql")
     parser.add_argument("--run_name", type=str, default="run1")
+    parser.add_argument("--json_file", type=str, default=None)
     args = parser.parse_args()
-    main(args)
+    if args.json_file:
+        eval_loose_json(args)
+    else:
+        main(args)

@@ -70,7 +70,7 @@ def main() -> None:
         to_seq2seq(meta_tuning_data)
 
     evaluator = utils.tool.get_evaluator(args.evaluate.tool)(args)
-    model = utils.tool.get_model(args.model.name)(args)
+    model = LLM
     model_tokenizer = model.tokenizer
     if not model_tokenizer.pad_token:
         model_tokenizer.pad_token = model_tokenizer.eos_token

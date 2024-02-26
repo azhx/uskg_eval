@@ -40,6 +40,7 @@ class Infotabs(datasets.GeneratorBasedBuilder):
                 "table_id": datasets.Value("string"),
                 "hypothesis": datasets.Value("string"),
                 "table": datasets.Value("string"),
+                "natural_label": datasets.Value("string"),
                 "label": datasets.Value("string"),
             }
         )
@@ -93,9 +94,16 @@ class Infotabs(datasets.GeneratorBasedBuilder):
                     self.table_cache[table_id] = json.load(f)
             # get the table
             table = self.table_cache[table_id]
+            if row['label'].lower() == "c":
+                label = "wrong"
+            elif row['label'].lower() == "e":
+                label = "reasonable"
+            else:
+                label = "not necessarily either"
             yield idx, { 
                 "table_id": table_id,
                 "hypothesis": row['hypothesis'],
                 "table": str(table),
-                "label": row['label'],
+                "natural_label": label,
+                "label": row['label']
             }

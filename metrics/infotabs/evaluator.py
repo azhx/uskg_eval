@@ -11,17 +11,17 @@ class EvaluateTool(object):
         total = 0
         correct = 0
 
-        entail_synonyms = ['entail', 'support', 'E', 'reasonable']
-        refute_synonyms = ['refute', 'contradict', 'C', 'wrong']
-        neutral_synonyms = ['neutral', 'irrelevant', 'N', 'neither', "not necessarily either"]
+        entail_synonyms = ['entail', 'support', 'reasonable']
+        refute_synonyms = ['refute', 'wrong']
+        neutral_synonyms = ['not enough info', 'neither']
 
         for pred, gold_item in zip(preds, golds): 
             # correct or not
-            if any(synonym in pred.lower() for synonym in entail_synonyms):
+            if any(synonym in pred.lower() for synonym in entail_synonyms) or any(pred.lower() in synonym for synonym in entail_synonyms):
                 pred = "e"
-            elif any(synonym in pred.lower() for synonym in refute_synonyms):
+            elif any(synonym in pred.lower() for synonym in refute_synonyms) or any(pred.lower() in synonym for synonym in refute_synonyms):
                 pred = "c"
-            elif any(synonym in pred.lower() for synonym in neutral_synonyms):
+            elif any(synonym in pred.lower() for synonym in neutral_synonyms) or any(pred.lower() in synonym for synonym in neutral_synonyms):
                 pred = "n"
             if pred.lower() == gold_item['label'].lower():
                 correct += 1
